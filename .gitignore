@@ -1,0 +1,46 @@
+# Minecraft Modpack .gitignore
+
+# Binary files (mods and libraries)
+minecraft/mods/
+minecraft/coremods/
+minecraft/libraries/
+minecraft/natives/
+minecraft/versions/
+
+# World data and runtime files
+minecraft/saves/
+minecraft/logs/
+minecraft/crash-reports/
+minecraft/screenshots/
+minecraft/resourcepacks/
+minecraft/shaderpacks/
+minecraft/.minecraft/
+minecraft/usercache.json
+minecraft/usernamecache.json
+minecraft/options.txt
+minecraft/texturepacks/
+minecraft/server-resource-packs/
+minecraft/storage/
+
+# System and IDE files
+.DS_Store
+.vscode/
+.idea/
+*.log
+*.tmp
+
+# PrismLauncher specific
+.tmp/
+.git/
+# Keep config for Prism
+!instance.cfg
+!mmc-pack.json
+!icon.png
+
+# Keep only configs and scripts
+!minecraft/config/
+!minecraft/kubejs/
+!minecraft/scripts/
+!minecraft/defaultconfigs/
+!minecraft/local/
+!minecraft/modernfix/
