@@ -26,6 +26,7 @@ minecraft/storage/
 .DS_Store
 .vscode/
 .idea/
+*_dev/
 *.log
 *.tmp
 
