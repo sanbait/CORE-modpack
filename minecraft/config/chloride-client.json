@@ -12,7 +12,7 @@
   "blueBand": true,
   "customFog": true,
   "fogStart": 0,
-  "fogEnd": 192,
+  "fogEnd": 100,
   "fogShape": "CYLINDER",
   "cloudsHeight": 192,
   "entityNametagRendering": true,
