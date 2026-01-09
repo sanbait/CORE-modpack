@@ -1,0 +1,17 @@
+{
+    "item.nexuscore.core_item": "Ядро Нексуса",
+    "item.nexuscore.core_key": "Ключ Ядра",
+    "entity.nexuscore.core": "Ядро Нексуса",
+    "creativetab.nexus_tab": "Nexus Core",
+    "text.nexuscore.upgrade_success": "§aУспешно улучшено! Уровень: %s",
+    "text.nexuscore.upgrade_fail": "§eНужен %s для улучшения.",
+    "key.nexuscore.toggle_particles": "Вкл/Выкл Визуальные эффекты",
+    "key.category.nexuscore": "Nexus Core",
+    "overlay.nexuscore.level": "§d\u2726 Уровень Нексуса %s \u2726",
+    "overlay.nexuscore.hp": "§c\u2764 %s / %s",
+    "overlay.nexuscore.radius": "§bРадиус: %s",
+    "overlay.nexuscore.repair_cost": "§cЦена починки: §f%s",
+    "overlay.nexuscore.upgrade_cost": "§eЦена улучшения: §f%s",
+    "message.nexuscore.max_level": "§6Максимальный уровень!",
+    "message.nexuscore.core_removed": "Ядро удалено!"
+}
