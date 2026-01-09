@@ -1,0 +1,471 @@
+[
+  {
+    "name": "Азуритоносный глубинный сланец",
+    "blockName": "geolosys:deepslate_azurite_ore",
+    "order": 15,
+    "color": 11796750,
+    "drawing": false
+  },
+  {
+    "name": "Незерская золотая руда",
+    "blockName": "minecraft:nether_gold_ore",
+    "order": 10,
+    "color": 3030784,
+    "drawing": false
+  },
+  {
+    "name": "Бедное золото",
+    "blockName": "geolosys:nether_gold_ore",
+    "order": 7,
+    "color": 6382217,
+    "drawing": false
+  },
+  {
+    "name": "Лазуритовая руда",
+    "blockName": "minecraft:lapis_ore",
+    "order": 54,
+    "color": 8192486,
+    "drawing": true
+  },
+  {
+    "name": "Древние обломки",
+    "blockName": "geolosys:ancient_debris_ore",
+    "order": 63,
+    "color": 16436486,
+    "drawing": false
+  },
+  {
+    "name": "Платина",
+    "blockName": "geolosys:platinum_ore",
+    "order": 26,
+    "color": 602921,
+    "drawing": false
+  },
+  {
+    "name": "Малахитоносный глубинный сланец",
+    "blockName": "geolosys:deepslate_malachite_ore",
+    "order": 14,
+    "color": 8425849,
+    "drawing": false
+  },
+  {
+    "name": "Бурый уголь",
+    "blockName": "geolosys:lignite_ore",
+    "order": 34,
+    "color": 1726689,
+    "drawing": false
+  },
+  {
+    "name": "Азурит",
+    "blockName": "geolosys:azurite_ore",
+    "order": 13,
+    "color": 5728185,
+    "drawing": true
+  },
+  {
+    "name": "Золотая руда",
+    "blockName": "minecraft:gold_ore",
+    "order": 9,
+    "color": 9244726,
+    "drawing": true
+  },
+  {
+    "name": "Глубинный сланец бурого уголя",
+    "blockName": "geolosys:deepslate_lignite_ore",
+    "order": 38,
+    "color": 3017679,
+    "drawing": false
+  },
+  {
+    "name": "Угольноносный глубинный сланец",
+    "blockName": "geolosys:deepslate_coal_ore",
+    "order": 41,
+    "color": 3078970,
+    "drawing": false
+  },
+  {
+    "name": "Аутунит",
+    "blockName": "geolosys:autunite_ore",
+    "order": 28,
+    "color": 6562987,
+    "drawing": false
+  },
+  {
+    "name": "Лазурит",
+    "blockName": "geolosys:lapis_ore",
+    "order": 52,
+    "color": 6715458,
+    "drawing": true
+  },
+  {
+    "name": "Железоносный глубинный сланец",
+    "blockName": "minecraft:deepslate_iron_ore",
+    "order": 5,
+    "color": 1062824,
+    "drawing": false
+  },
+  {
+    "name": "Бериллоносный глубинный сланец",
+    "blockName": "geolosys:deepslate_beryl_ore",
+    "order": 49,
+    "color": 16415228,
+    "drawing": false
+  },
+  {
+    "name": "Боксит",
+    "blockName": "geolosys:bauxite_ore",
+    "order": 24,
+    "color": 3345547,
+    "drawing": false
+  },
+  {
+    "name": "Теаллитоносный глубинный сланец",
+    "blockName": "geolosys:deepslate_teallite_ore",
+    "order": 21,
+    "color": 7909198,
+    "drawing": false
+  },
+  {
+    "name": "Аутунитоносный глубинный сланец",
+    "blockName": "geolosys:deepslate_autunite_ore",
+    "order": 29,
+    "color": 455248,
+    "drawing": false
+  },
+  {
+    "name": "Золото",
+    "blockName": "geolosys:gold_ore",
+    "order": 6,
+    "color": 9827978,
+    "drawing": true
+  },
+  {
+    "name": "Гематит",
+    "blockName": "geolosys:hematite_ore",
+    "order": 0,
+    "color": 13256045,
+    "drawing": false
+  },
+  {
+    "name": "Золотоносный глубинный сланец",
+    "blockName": "minecraft:deepslate_gold_ore",
+    "order": 11,
+    "color": 14437975,
+    "drawing": false
+  },
+  {
+    "name": "Изумрудоносный глубинный сланец",
+    "blockName": "minecraft:deepslate_emerald_ore",
+    "order": 51,
+    "color": 957962,
+    "drawing": false
+  },
+  {
+    "name": "Deepslate Sal Ammoniac Ore",
+    "blockName": "theurgy:deepslate_sal_ammoniac_ore",
+    "order": 66,
+    "color": 3481049,
+    "drawing": false
+  },
+  {
+    "name": "Галеноносный глубинный сланец",
+    "blockName": "geolosys:deepslate_galena_ore",
+    "order": 23,
+    "color": 1462692,
+    "drawing": false
+  },
+  {
+    "name": "Битуминозный уголь",
+    "blockName": "geolosys:bituminous_coal_ore",
+    "order": 35,
+    "color": 11749390,
+    "drawing": false
+  },
+  {
+    "name": "Угленосный глубинный сланец",
+    "blockName": "minecraft:deepslate_coal_ore",
+    "order": 43,
+    "color": 12988624,
+    "drawing": false
+  },
+  {
+    "name": "Цинконосный глубинный сланец",
+    "blockName": "create:deepslate_zinc_ore",
+    "order": 33,
+    "color": 7382806,
+    "drawing": false
+  },
+  {
+    "name": "Медная руда",
+    "blockName": "minecraft:copper_ore",
+    "order": 16,
+    "color": 3791160,
+    "drawing": true
+  },
+  {
+    "name": "Глубинный сланец антрацитового уголя",
+    "blockName": "geolosys:deepslate_anthracite_coal_ore",
+    "order": 40,
+    "color": 16160866,
+    "drawing": false
+  },
+  {
+    "name": "Теаллит",
+    "blockName": "geolosys:teallite_ore",
+    "order": 19,
+    "color": 16199856,
+    "drawing": false
+  },
+  {
+    "name": "Галена",
+    "blockName": "geolosys:galena_ore",
+    "order": 22,
+    "color": 1281505,
+    "drawing": false
+  },
+  {
+    "name": "Лазуритоносный глубинный сланец",
+    "blockName": "minecraft:deepslate_lapis_ore",
+    "order": 55,
+    "color": 10480891,
+    "drawing": true
+  },
+  {
+    "name": "Алмазная руда",
+    "blockName": "minecraft:diamond_ore",
+    "order": 46,
+    "color": 16034917,
+    "drawing": true
+  },
+  {
+    "name": "Касситерит",
+    "blockName": "geolosys:cassiterite_ore",
+    "order": 18,
+    "color": 15976036,
+    "drawing": false
+  },
+  {
+    "name": "Смешанный кварц",
+    "blockName": "geolosys:quartz_ore",
+    "order": 60,
+    "color": 14402204,
+    "drawing": false
+  },
+  {
+    "name": "Лимонитоносный глубинный сланец",
+    "blockName": "geolosys:deepslate_limonite_ore",
+    "order": 3,
+    "color": 8803510,
+    "drawing": false
+  },
+  {
+    "name": "Редстоуновая руда",
+    "blockName": "minecraft:redstone_ore",
+    "order": 58,
+    "color": 6712566,
+    "drawing": false
+  },
+  {
+    "name": "Гематитоносный глубинный сланец",
+    "blockName": "geolosys:deepslate_hematite_ore",
+    "order": 2,
+    "color": 13794876,
+    "drawing": false
+  },
+  {
+    "name": "Глубинный сланец смешанного кварца",
+    "blockName": "geolosys:deepslate_quartz_ore",
+    "order": 61,
+    "color": 8133551,
+    "drawing": false
+  },
+  {
+    "name": "Глубинный сланец битуминозного уголя",
+    "blockName": "geolosys:deepslate_bituminous_coal_ore",
+    "order": 39,
+    "color": 10700931,
+    "drawing": false
+  },
+  {
+    "name": "Железная руда",
+    "blockName": "minecraft:iron_ore",
+    "order": 4,
+    "color": 1246754,
+    "drawing": false
+  },
+  {
+    "name": "Платиноносный глубинный сланец",
+    "blockName": "geolosys:deepslate_platinum_ore",
+    "order": 27,
+    "color": 2176110,
+    "drawing": false
+  },
+  {
+    "name": "Кимберлитоносный глубинный сланец",
+    "blockName": "geolosys:deepslate_kimberlite_ore",
+    "order": 45,
+    "color": 6177407,
+    "drawing": false
+  },
+  {
+    "name": "Угольная руда",
+    "blockName": "minecraft:coal_ore",
+    "order": 42,
+    "color": 107411,
+    "drawing": false
+  },
+  {
+    "name": "Изумрудная руда",
+    "blockName": "minecraft:emerald_ore",
+    "order": 50,
+    "color": 5499259,
+    "drawing": true
+  },
+  {
+    "name": "Касситеритоносный глубинный сланец",
+    "blockName": "geolosys:deepslate_cassiterite_ore",
+    "order": 20,
+    "color": 6065695,
+    "drawing": false
+  },
+  {
+    "name": "Алмазоносный глубинный сланец",
+    "blockName": "minecraft:deepslate_diamond_ore",
+    "order": 47,
+    "color": 1073718,
+    "drawing": true
+  },
+  {
+    "name": "Редстоуноносный глубинный сланец",
+    "blockName": "minecraft:deepslate_redstone_ore",
+    "order": 59,
+    "color": 7473811,
+    "drawing": false
+  },
+  {
+    "name": "Меденосный глубинный сланец",
+    "blockName": "minecraft:deepslate_copper_ore",
+    "order": 17,
+    "color": 13581208,
+    "drawing": false
+  },
+  {
+    "name": "Антрацитовый уголь",
+    "blockName": "geolosys:anthracite_coal_ore",
+    "order": 36,
+    "color": 15828171,
+    "drawing": false
+  },
+  {
+    "name": "Берилл",
+    "blockName": "geolosys:beryl_ore",
+    "order": 48,
+    "color": 5896612,
+    "drawing": false
+  },
+  {
+    "name": "Кимберлит",
+    "blockName": "geolosys:kimberlite_ore",
+    "order": 44,
+    "color": 11572484,
+    "drawing": false
+  },
+  {
+    "name": "Золотоносный глубинный сланец",
+    "blockName": "geolosys:deepslate_gold_ore",
+    "order": 8,
+    "color": 9635428,
+    "drawing": false
+  },
+  {
+    "name": "Cфалерит",
+    "blockName": "geolosys:sphalerite_ore",
+    "order": 30,
+    "color": 6655685,
+    "drawing": false
+  },
+  {
+    "name": "Цинковая руда",
+    "blockName": "create:zinc_ore",
+    "order": 32,
+    "color": 13257205,
+    "drawing": false
+  },
+  {
+    "name": "Малахит",
+    "blockName": "geolosys:malachite_ore",
+    "order": 12,
+    "color": 14271187,
+    "drawing": false
+  },
+  {
+    "name": "Киноварь",
+    "blockName": "geolosys:cinnabar_ore",
+    "order": 56,
+    "color": 14862177,
+    "drawing": false
+  },
+  {
+    "name": "Киновареносный глубинный сланец",
+    "blockName": "geolosys:deepslate_cinnabar_ore",
+    "order": 57,
+    "color": 7815372,
+    "drawing": false
+  },
+  {
+    "name": "Cфалеритоносный глубинный сланец",
+    "blockName": "geolosys:deepslate_sphalerite_ore",
+    "order": 31,
+    "color": 9532617,
+    "drawing": false
+  },
+  {
+    "name": "Sal Ammoniac Ore",
+    "blockName": "theurgy:sal_ammoniac_ore",
+    "order": 65,
+    "color": 5929626,
+    "drawing": false
+  },
+  {
+    "name": "Уголь",
+    "blockName": "geolosys:coal_ore",
+    "order": 37,
+    "color": 8543263,
+    "drawing": true
+  },
+  {
+    "name": "Руда незерского кварца",
+    "blockName": "minecraft:nether_quartz_ore",
+    "order": 62,
+    "color": 7033096,
+    "drawing": false
+  },
+  {
+    "name": "Лимонит",
+    "blockName": "geolosys:limonite_ore",
+    "order": 1,
+    "color": 5808116,
+    "drawing": false
+  },
+  {
+    "name": "Бокситоносный глубинный сланец",
+    "blockName": "geolosys:deepslate_bauxite_ore",
+    "order": 25,
+    "color": 2083212,
+    "drawing": false
+  },
+  {
+    "name": "Лазуритоносный глубинный сланец",
+    "blockName": "geolosys:deepslate_lapis_ore",
+    "order": 53,
+    "color": 757929,
+    "drawing": true
+  },
+  {
+    "name": "Древние обломки",
+    "blockName": "minecraft:ancient_debris",
+    "order": 64,
+    "color": 7510089,
+    "drawing": false
+  }
+]

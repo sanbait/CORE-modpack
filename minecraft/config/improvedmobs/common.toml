@@ -129,22 +129,22 @@
 	#Whitelist for blocks, which can be actively broken. 
 	#Usage: id|namespace|#tag. Put "!" infront to exclude blocks. E.g. "minecraft", "minecraft:dirt" or "#minecraft:planks"
 	#Note: If you include common blocks (like grass blocks) the pathfinding can have undesirable results.
-	"Block Break Whitelist" = ["#forge:glass", "#forge:glass_panes", "#minecraft:fence_gates", "#forge:fence_gates", "#minecraft:wooden_doors"]
+	"Block Break Whitelist" = ["#forge:glass", "#forge:glass_panes", "#minecraft:fence_gates", "#forge:fence_gates", "#minecraft:wooden_doors", "minecraft:dirt", "minecraft:cobblestone", "minecraft:stone", "minecraft:oak_planks", "#minecraft:planks", "#minecraft:logs"]
 	#Treat Block Whitelist as Blocklist
 	"Breaklist as Blacklist" = false
 	#Use the block breaking sound instead of a knocking sound
 	Sound = false
 	#Chance for a mob to be able to break blocks
 	#Range: 0.0 ~ 1.0
-	"Breaker Chance" = 0.30000001192092896
+	"Breaker Chance" = 0.8
 	#Initial cooldown for block breaking mobs
 	#Range: > 0
-	"Breaker Initial Cooldown" = 120
+	"Breaker Initial Cooldown" = 60
 	#Cooldown for breaking blocks
 	#Range: > 0
 	"Breaker Cooldown" = 20
 	#By default mobs can only break the block they can harvest with the current tool they holding. Set this to true to disable that check (The block will not drop if they cant harvest it though!).
-	"Ignore Harvest Check" = false
+	"Ignore Harvest Check" = true
 	#Blocks will be restored after x ticks being broken. If set to 0 will never restore
 	#This will not restore block entity data!
 	#Range: > 0
@@ -176,7 +176,7 @@
 	"Neutral Aggressive Chance" = 0.05000000074505806
 	#List for of pairs containing which mobs auto target others. Syntax is [mob id]-[mob id] where second value is the target.
 	# e.g. minecraft:zombie-minecraft:skeleton makes all zombies target skeletons
-	"Auto Target List" = []
+	"Auto Target List" = ["minecraft:zombie-minecraft:iron_golem", "minecraft:skeleton-minecraft:iron_golem", "minecraft:creeper-minecraft:iron_golem", "minecraft:spider-minecraft:iron_golem", "minecraft:witch-minecraft:iron_golem", "minecraft:pillager-minecraft:iron_golem", "minecraft:vindicator-minecraft:iron_golem"]
 	#Difficulty at which mobs are able to break blocks
 	#Range: 0.0 ~ 1.7976931348623157E308
 	"Difficulty Break AI" = 0.0

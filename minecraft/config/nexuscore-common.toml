@@ -1,0 +1,17 @@
+
+["Nexus Core Settings"]
+	#Base radius for aggro and buffs at level 1
+	#Range: 1.0 ~ 100.0
+	baseRadius = 10.0
+	#Extra radius added per level (Radius = Base + Level * PerLevel)
+	#Range: 0.0 ~ 50.0
+	radiusPerLevel = 2.0
+	#Health Points added per level (MaxHP = Level * HPParLevel)
+	#Range: 10.0 ~ 10000.0
+	hpPerLevel = 200.0
+	#Upgrade costs for each level. Format: 'modid:item_id|amount'.
+	#Index 0 = resource to go from Level 1 -> 2
+	#Index 1 = resource to go from Level 2 -> 3, etc.
+	#Healing uses the same resource (1 item = 10% Heal).
+	upgradeCosts = ["minecraft:copper_ingot|1", "minecraft:iron_ingot|10", "minecraft:gold_ingot|10", "minecraft:diamond|1", "minecraft:emerald|1", "minecraft:netherite_ingot|1", "minecraft:nether_star|1", "minecraft:dragon_egg|1", "minecraft:beacon|1"]
+

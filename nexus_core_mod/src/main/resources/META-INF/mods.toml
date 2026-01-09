@@ -1,0 +1,35 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="All Rights Reserved"
+issueTrackerURL=""
+
+[[mods]]
+modId="nexuscore"
+version="${file.jarVersion}"
+displayName="Nexus Core"
+authors="Sanbait"
+description='''
+Custom Core mod for the modpack.
+'''
+logoFile="logo.png"
+
+[[dependencies.nexuscore]]
+    modId="forge"
+    mandatory=true
+    versionRange="[47,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.nexuscore]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.20.1,1.21)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.nexuscore]]
+    modId="geckolib"
+    mandatory=true
+    versionRange="[4.4.2,)"
+    ordering="NONE"
+    side="BOTH"

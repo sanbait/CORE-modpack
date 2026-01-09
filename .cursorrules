@@ -1,0 +1,14 @@
+# KubeJS & Minecraft Context
+- Minecraft Version: 1.20.1 
+- Mod Loader: Forge 
+- KubeJS Version: 6.5 
+
+# Syntax Rules
+- DO NOT use the old `onEvent('recipetype', event => ...)` syntax.
+- USE the new event system: `ServerEvents.recipes(event => ...)` or `StartupEvents.registry('item', event => ...)`.
+- For item tags use: `ServerEvents.tags('item', event => ...)`
+- Always prefer `event.remove({ id: '...' })` over removing by output where possible just to be safe.
+
+# General Behavior
+- When asking for scripts, always specify if it is a SERVER script (reloadable) or STARTUP script (requires restart).
+- Consult the @KubeJS Wiki for any methods involving `Create` mod integration or complex NBT handling.
