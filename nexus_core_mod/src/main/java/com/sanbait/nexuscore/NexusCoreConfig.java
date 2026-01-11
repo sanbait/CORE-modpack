@@ -17,6 +17,8 @@ public class NexusCoreConfig {
 
         // Lux System
         public static final ForgeConfigSpec.ConfigValue<java.util.List<? extends String>> ITEM_LUX_CAPACITIES;
+        public static final ForgeConfigSpec.IntValue CORE_LUX_GENERATION_PER_LEVEL;
+        public static final ForgeConfigSpec.IntValue CORE_LUX_CAPACITY_PER_LEVEL;
 
         static {
                 BUILDER.push("Nexus Core Settings");
@@ -88,6 +90,12 @@ public class NexusCoreConfig {
                                                 "minecraft:golden_pickaxe|1000",
                                                 "minecraft:diamond_pickaxe|2000",
                                                 "minecraft:netherite_pickaxe|5000"), entry -> entry instanceof String);
+
+                CORE_LUX_GENERATION_PER_LEVEL = BUILDER.comment("Lux generated per tick per level.")
+                                .defineInRange("coreLuxGenerationPerLevel", 1, 0, 1000);
+
+                CORE_LUX_CAPACITY_PER_LEVEL = BUILDER.comment("Maximum Lux stored per level.")
+                                .defineInRange("coreLuxCapacityPerLevel", 1000, 100, 100000);
 
                 BUILDER.pop();
 

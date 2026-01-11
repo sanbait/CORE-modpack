@@ -23,12 +23,12 @@ public class NexusCoreRenderer extends GeoEntityRenderer<NexusCoreEntity> {
 
             poseStack.pushPose();
             poseStack.translate(0.0D, entity.getBoundingBox().getYsize() + 0.5D, 0.0D);
-            poseStack.mulPose(this.entityRenderDispatcher.cameraRotation());
+            poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
             poseStack.scale(-0.025F, -0.025F, 0.025F);
 
             com.mojang.blaze3d.systems.RenderSystem.disableDepthTest();
 
-            net.minecraft.client.gui.Font font = this.getFontRenderer();
+            net.minecraft.client.gui.Font font = net.minecraft.client.Minecraft.getInstance().font;
             float xOffset = -font.width(luxText) / 2.0F;
             font.drawInBatch(luxText, xOffset, 0, 0xFFFF00, false, poseStack.last().pose(), bufferSource,
                     net.minecraft.client.gui.Font.DisplayMode.NORMAL, 0, packedLight);
