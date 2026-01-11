@@ -23,3 +23,11 @@ All notable changes to the Entropy Core project will be documented in this file.
 - **Mod**: `PhantomBlockHandler` event bus ID corrected to `luxsystem`.
 - **Config**: Fixed `NexusCoreConfig` default `baseRadius` to **12.0** (was 10.0) to match Tech Design.
 - **Docs**: Rewrote `nexus_core_mod/README.md` to be the "Single Source of Truth" for mechanics and config.
+
+### Fixed (Session 2)
+
+- **Crash**: Fixed critical server-side crashes (`NoClassDefFoundError`) in Lux Items and NexusCoreEntity by abstracting client code.
+- **Bug**: Fixed `LuxCondenser` consuming stacked buckets (now rejects stacks > 1).
+- **Bug**: Fixed Lux Items (Pickaxe, Armor, Sword) not charging. Refactored from NBT to Capabilities to match Core logic.
+- **Visual**: Fixed "mojibake" (unicode squares) in Lux tooltips by replacing characters with ASCII bars.
+- **Balance**: Improved Lux charging frequency to 5 ticks (80 Lux/sec) for smoother visual feedback.

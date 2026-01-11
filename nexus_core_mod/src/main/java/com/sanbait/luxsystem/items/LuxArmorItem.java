@@ -24,11 +24,17 @@ public class LuxArmorItem extends ArmorItem implements ILuxStorage {
     }
 
     public static int getLux(ItemStack stack) {
-        return stack.getOrCreateTag().getInt("LuxStored");
+        return stack.getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP)
+                .map(com.sanbait.luxsystem.capabilities.ILuxStorage::getLuxStored)
+                .orElse(0);
     }
 
     public static void setLux(ItemStack stack, int amount) {
-        stack.getOrCreateTag().putInt("LuxStored", amount);
+        stack.getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP).ifPresent(cap -> {
+            if (cap instanceof com.sanbait.luxsystem.capabilities.LuxCapability impl) {
+                impl.setLux(amount);
+            }
+        });
     }
 
     @Override
@@ -39,41 +45,43 @@ public class LuxArmorItem extends ArmorItem implements ILuxStorage {
             // if (level.getGameTime() % 100 == 0) { ... }
 
             // Effects
-            int lux = getLux(stack);
-            if (lux > 0) {
-                // Consume lux slowly (every 100 ticks = 5 seconds)
-                if (level.getGameTime() % 100 == 0) {
-                    setLux(stack, lux - 1);
-                }
+            stack.getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP).ifPresent(cap -> {
+                int lux = cap.getLuxStored();
+                if (lux > 0) {
+                    // Consume lux slowly (every 100 ticks = 5 seconds)
+                    if (level.getGameTime() % 100 == 0) {
+                        cap.extractLux(1, false);
+                    }
 
-                switch (this.type) {
-                    case HELMET:
-                        // Night Vision if > 50% charge
-                        if (lux > capacity / 2) {
-                            player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 220, 0, true, false));
-                        }
-                        break;
-                    case CHESTPLATE:
-                        // Passive Resistance?
-                        player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 20, 0, true, false));
-                        break;
-                    case LEGGINGS:
-                        // Speed
-                        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 20, 0, true, false));
-                        break;
-                    case BOOTS:
-                        // Jump Boost II
-                        player.addEffect(new MobEffectInstance(MobEffects.JUMP, 20, 1, true, false));
-                        player.resetFallDistance(); // Simple fall damage negation tick
-                        break;
+                    switch (this.type) {
+                        case HELMET:
+                            // Night Vision if > 50% charge
+                            if (lux > capacity / 2) {
+                                player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 220, 0, true, false));
+                            }
+                            break;
+                        case CHESTPLATE:
+                            // Passive Resistance?
+                            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 20, 0, true, false));
+                            break;
+                        case LEGGINGS:
+                            // Speed
+                            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 20, 0, true, false));
+                            break;
+                        case BOOTS:
+                            // Jump Boost II
+                            player.addEffect(new MobEffectInstance(MobEffects.JUMP, 20, 1, true, false));
+                            player.resetFallDistance(); // Simple fall damage negation tick
+                            break;
+                    }
                 }
-            }
+            });
         }
     }
 
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
+        if (com.sanbait.nexuscore.util.ClientHooks.isShiftDown()) {
             tooltip.add(Component.translatable("tooltip.luxsystem.lux_armor_set_bonus")
                     .withStyle(ChatFormatting.GOLD));
             // Lux Charge handled globally

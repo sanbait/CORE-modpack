@@ -1,0 +1,41 @@
+[
+  {
+    "user": {
+      "type": "player",
+      "name": "sunbait",
+      "uniqueId": "2a645cbf-55dd-4e91-a25a-4ccae84e6179"
+    },
+    "time": 1768129519713,
+    "type": "Profiler",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/a5nbqkF5SZ"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "sunbait",
+      "uniqueId": "2a645cbf-55dd-4e91-a25a-4ccae84e6179"
+    },
+    "time": 1768126952350,
+    "type": "Profiler",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/5jq3UB1k7b"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "sunbait",
+      "uniqueId": "2a645cbf-55dd-4e91-a25a-4ccae84e6179"
+    },
+    "time": 1768126603678,
+    "type": "Profiler",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/xhI20EXN8l"
+    }
+  }
+]

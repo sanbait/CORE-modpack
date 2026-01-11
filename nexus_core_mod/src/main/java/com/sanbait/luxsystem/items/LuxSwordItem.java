@@ -23,50 +23,48 @@ public class LuxSwordItem extends SwordItem implements ILuxStorage {
         super(tier, attackDamageModifier, attackSpeedModifier, properties);
     }
 
+    // Helper to get lux from stack
     public static int getLux(ItemStack stack) {
-        return stack.getOrCreateTag().getInt("LuxStored");
+        return stack.getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP)
+                .map(com.sanbait.luxsystem.capabilities.ILuxStorage::getLuxStored)
+                .orElse(0);
     }
 
     public static void setLux(ItemStack stack, int amount) {
-        stack.getOrCreateTag().putInt("LuxStored", amount);
+        stack.getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP).ifPresent(cap -> {
+            if (cap instanceof com.sanbait.luxsystem.capabilities.LuxCapability impl) {
+                impl.setLux(amount);
+            }
+        });
     }
 
     @Override
     public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-        int lux = getLux(stack);
+        stack.getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP).ifPresent(cap -> {
+            int lux = cap.getLuxStored();
+            if (lux > 0) {
+                // Always consume Lux, even if less than 5
+                int consumed = Math.min(lux, 5);
+                cap.extractLux(consumed, false);
 
-        if (lux > 0) {
-            // Always consume Lux, even if less than 5
-            int consumed = Math.min(lux, 5);
-            setLux(stack, lux - consumed);
-
-            // Only apply effect if we had enough (5+)
-            if (consumed >= 5) {
-                target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 40, 1));
+                // Only apply effect if we had enough (5+)
+                if (consumed >= 5) {
+                    target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 40, 1));
+                }
             }
-        }
-
+        });
         return super.hurtEnemy(stack, target, attacker);
     }
 
     @Override
     public void inventoryTick(ItemStack stack, Level level, net.minecraft.world.entity.Entity entity, int slotId,
             boolean isSelected) {
-        if (!level.isClientSide && entity instanceof Player player) {
-            if (level.getGameTime() % 20 == 0) {
-                if (com.sanbait.luxsystem.CoreRadiusManager.isInRadius(level, player.blockPosition())) {
-                    int current = getLux(stack);
-                    if (current < capacity) {
-                        setLux(stack, current + 1);
-                    }
-                }
-            }
-        }
+        // Charging handled centrally by NexusCoreEntity
     }
 
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
+        if (com.sanbait.nexuscore.util.ClientHooks.isShiftDown()) {
             // Detailed stats
             tooltip.add(Component.translatable("tooltip.luxsystem.lux_sword_stats")
                     .withStyle(ChatFormatting.GOLD));

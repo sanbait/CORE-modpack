@@ -73,9 +73,20 @@ public class LuxCondenserBlockEntity extends BlockEntity implements net.minecraf
         ItemStack bucketInput = entity.output.getStackInSlot(0);
         if (!bucketInput.isEmpty() && bucketInput.getItem() == ModItems.LIQUID_LUX_BUCKET.get()) {
             if (entity.inputTank.getFluidAmount() + 1000 <= entity.inputTank.getCapacity()) {
-                entity.inputTank.fill(new FluidStack(ModFluids.LIQUID_LUX_SOURCE.get(), 1000),
-                        IFluidHandler.FluidAction.EXECUTE);
-                entity.output.setStackInSlot(0, new ItemStack(net.minecraft.world.item.Items.BUCKET));
+                // Check if we can put the empty bucket back somewhere or if slot 0 is stackable
+                // (buckets usually aren't but can be in mods)
+                // Better logic: If stack > 1, we can't just replace it with empty bucket unless
+                // we drop it or have an output slot.
+                // Current design seems to assume 1 item.
+                // Refined Logic: Only process if stack size is 1 OR if we can decrement stack
+                // and create empty bucket entity (messy).
+                // Safest for now: Only process if stack size is 1 to prevent eating the whole
+                // stack.
+                if (bucketInput.getCount() == 1) {
+                    entity.inputTank.fill(new FluidStack(ModFluids.LIQUID_LUX_SOURCE.get(), 1000),
+                            IFluidHandler.FluidAction.EXECUTE);
+                    entity.output.setStackInSlot(0, new ItemStack(net.minecraft.world.item.Items.BUCKET));
+                }
             }
         }
 

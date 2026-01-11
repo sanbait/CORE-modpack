@@ -38,20 +38,27 @@ public class LuxPickaxeItem extends PickaxeItem implements ILuxStorage {
     // make the ItemStack have the capability without a Provider.
 
     // Helper to get lux from stack
+    // Helper to get lux from stack
     public static int getLux(ItemStack stack) {
-        return stack.getOrCreateTag().getInt("LuxStored");
+        return stack.getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP)
+                .map(com.sanbait.luxsystem.capabilities.ILuxStorage::getLuxStored)
+                .orElse(0);
     }
 
     public static void setLux(ItemStack stack, int amount) {
-        stack.getOrCreateTag().putInt("LuxStored", amount);
+        stack.getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP).ifPresent(cap -> {
+            if (cap instanceof com.sanbait.luxsystem.capabilities.LuxCapability impl) {
+                impl.setLux(amount);
+            }
+        });
     }
 
     @Override
     public boolean mineBlock(ItemStack stack, Level level, BlockState state, BlockPos pos, LivingEntity entity) {
-        int lux = getLux(stack);
-        if (lux > 0) {
-            setLux(stack, lux - 1);
-        }
+        // Consume Lux via Capability
+        stack.getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP).ifPresent(cap -> {
+            cap.extractLux(1, false);
+        });
         return super.mineBlock(stack, level, state, pos, entity);
     }
 
@@ -66,7 +73,7 @@ public class LuxPickaxeItem extends PickaxeItem implements ILuxStorage {
 
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
+        if (com.sanbait.nexuscore.util.ClientHooks.isShiftDown()) {
             tooltip.add(Component.translatable("tooltip.luxsystem.lux_pickaxe_stats")
                     .withStyle(ChatFormatting.GOLD));
             tooltip.add(Component.literal(" "));

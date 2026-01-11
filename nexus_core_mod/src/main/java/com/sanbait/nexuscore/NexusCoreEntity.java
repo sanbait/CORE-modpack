@@ -134,7 +134,7 @@ public class NexusCoreEntity extends PathfinderMob
                 setCurrentLux(next);
             }
 
-            if (this.tickCount % 20 == 0) {
+            if (this.tickCount % 5 == 0) {
                 applyBuffs();
                 chargeNearbyItems();
             }
@@ -233,10 +233,10 @@ public class NexusCoreEntity extends PathfinderMob
             int current = cap.getLuxStored();
             if (current < max) {
                 // Determine transfer rate (e.g. up to 10 per tick per item)
-                // Since this runs every 20 ticks (1 sec), let's give a chunk, e.g. 20 (1 per
-                // sec equivalent? no, faster)
-                // Let's make it snappy: 50 lux per second (pulse)
-                int transfer = 50;
+                // Determine transfer rate (e.g. up to 10 per tick per item)
+                // Runs every 5 ticks (0.25 sec).
+                // 20 Lux per pulse => 80 Lux/sec
+                int transfer = 20;
 
                 // Cap by Core storage
                 int actualTransfer = Math.min(transfer, getCurrentLux());
@@ -246,6 +246,10 @@ public class NexusCoreEntity extends PathfinderMob
                 if (actualTransfer > 0) {
                     cap.receiveLux(actualTransfer, false);
                     extractLux(actualTransfer, false); // Drain from core
+
+                    // SYNC FIX: Mirror to NBT to force Client Sync
+                    // Changing NBT makes the ItemStack "dirty", triggering a packet.
+                    stack.getOrCreateTag().putInt("LuxStored", cap.getLuxStored());
                 }
             }
         });
@@ -300,26 +304,28 @@ public class NexusCoreEntity extends PathfinderMob
         if (!NexusCore.RENDER_PARTICLES || !this.isAlive())
             return; // Toggle check & Dead check
 
-        // OPTIMIZATION: Distance Culling (Don't render if player is far away)
-        net.minecraft.client.player.LocalPlayer player = net.minecraft.client.Minecraft.getInstance().player;
-        if (player != null && this.distanceToSqr(player) > 64 * 64) {
-            return;
-        }
+        net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
+            // OPTIMIZATION: Distance Culling (Don't render if player is far away)
+            net.minecraft.client.player.LocalPlayer player = net.minecraft.client.Minecraft.getInstance().player;
+            if (player != null && this.distanceToSqr(player) > 64 * 64) {
+                return;
+            }
 
-        double radius = NexusCoreConfig.BASE_RADIUS.get()
-                + (this.getCurrentLevel() * NexusCoreConfig.RADIUS_PER_LEVEL.get());
+            double radius = NexusCoreConfig.BASE_RADIUS.get()
+                    + (this.getCurrentLevel() * NexusCoreConfig.RADIUS_PER_LEVEL.get());
 
-        // Spawn particles in a circle
-        // OPTIMIZATION: Reduced from 10 per tick (200/sec) to 2 per tick (40/sec) to
-        // save FPS.
-        for (int i = 0; i < 2; i++) {
-            double angle = this.random.nextDouble() * 2 * Math.PI;
-            double x = this.getX() + radius * Math.cos(angle);
-            double z = this.getZ() + radius * Math.sin(angle);
-            double y = this.getY() + 0.5D;
+            // Spawn particles in a circle
+            // OPTIMIZATION: Reduced from 10 per tick (200/sec) to 2 per tick (40/sec) to
+            // save FPS.
+            for (int i = 0; i < 2; i++) {
+                double angle = this.random.nextDouble() * 2 * Math.PI;
+                double x = this.getX() + radius * Math.cos(angle);
+                double z = this.getZ() + radius * Math.sin(angle);
+                double y = this.getY() + 0.5D;
 
-            this.level().addParticle(net.minecraft.core.particles.ParticleTypes.END_ROD, x, y, z, 0, 0, 0);
-        }
+                this.level().addParticle(net.minecraft.core.particles.ParticleTypes.END_ROD, x, y, z, 0, 0, 0);
+            }
+        });
     }
 
     @Override

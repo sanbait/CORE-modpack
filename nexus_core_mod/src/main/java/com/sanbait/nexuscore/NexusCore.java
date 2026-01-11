@@ -47,7 +47,7 @@ public class NexusCore {
 
                         if (!existing.isEmpty()) {
                             context.getPlayer().displayClientMessage(net.minecraft.network.chat.Component
-                                    .literal("§cError: Core already exists! Only 1 allowed."), true);
+                                    .translatable("message.nexuscore.core_exist_error"), true);
                             return net.minecraft.world.InteractionResult.FAIL;
                         }
 
@@ -306,45 +306,60 @@ public class NexusCore {
         public static void onItemTooltip(net.minecraftforge.event.entity.player.ItemTooltipEvent event) {
             event.getItemStack().getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP)
                     .ifPresent(cap -> {
-                        // Visual Bar Logic
-                        int current = cap.getLuxStored();
-                        int max = cap.getMaxLuxStored();
-                        float percent = (float) current / max;
+                        // Global Shift Check
+                        if (com.sanbait.nexuscore.util.ClientHooks.isShiftDown()) {
+                            // Visual Bar Logic
+                            int current = cap.getLuxStored();
+                            int max = cap.getMaxLuxStored();
+                            float percent = (float) current / max;
 
-                        // Bar Construction (10 segments)
-                        int bars = (int) (percent * 10);
-                        StringBuilder bar = new StringBuilder();
-                        bar.append("§8["); // Dark Gray Bracket
-                        for (int i = 0; i < 10; i++) {
-                            if (i < bars) {
-                                bar.append("§b❙"); // Aqua Filled (or █)
-                            } else {
-                                bar.append("§7|"); // Gray Empty
+                            // Bar Construction (10 segments)
+                            int bars = (int) (percent * 10);
+                            StringBuilder bar = new StringBuilder();
+                            bar.append("§8["); // Dark Gray Bracket
+                            for (int i = 0; i < 10; i++) {
+                                if (i < bars) {
+                                    bar.append("§b|"); // Aqua Filled
+                                } else {
+                                    bar.append("§7."); // Gray Empty
+                                }
                             }
-                        }
-                        bar.append("§8]");
+                            bar.append("§8]");
 
-                        // Calculate Duration based on typical usage (Armor = 1/5s, Tool = 1/use)
-                        // Let's assume constant usage for estimation (Armor drain)
-                        // 1 lux per 100 ticks (5 sec).
-                        // Minutes = (Lux * 5) / 60
-                        int minutesLeft = (current * 5) / 60;
+                            // Calculate Duration based on typical usage (Armor = 1/5s, Tool = 1/use)
+                            // Let's assume constant usage for estimation (Armor drain)
+                            // 1 lux per 100 ticks (5 sec).
+                            // Minutes = (Lux * 5) / 60
+                            int minutesLeft = (current * 5) / 60;
 
-                        // Bar Line: [|||||-----] 70%
-                        event.getToolTip().add(net.minecraft.network.chat.Component.literal(
-                                bar.toString() + " §f" + (int) (percent * 100) + "%"));
-
-                        // Duration Line
-                        if (current > 0) {
+                            // Bar Line: [|||||-----] 70%
                             event.getToolTip().add(net.minecraft.network.chat.Component.literal(
-                                    "§7Duration: ~" + minutesLeft + " min"));
-                        }
+                                    bar.toString() + " §f" + (int) (percent * 100) + "%"));
 
-                        // Info
-                        if (percent > 0) {
-                            event.getToolTip().add(net.minecraft.network.chat.Component.literal("§9In Light: +Buffs"));
+                            // Duration Line
+                            if (current > 0) {
+                                event.getToolTip().add(net.minecraft.network.chat.Component.translatable(
+                                        "tooltip.nexuscore.duration", minutesLeft));
+                            }
+
+                            // Info
+                            if (percent > 0) {
+                                event.getToolTip().add(
+                                        net.minecraft.network.chat.Component
+                                                .translatable("tooltip.nexuscore.in_light"));
+                            } else {
+                                event.getToolTip().add(
+                                        net.minecraft.network.chat.Component
+                                                .translatable("tooltip.nexuscore.outside"));
+                            }
                         } else {
-                            event.getToolTip().add(net.minecraft.network.chat.Component.literal("§8Outside: Uses Lux"));
+                            // If Shift NOT down, show hint (Only for non-custom items to avoid duplicates)
+                            if (!(event.getItemStack()
+                                    .getItem() instanceof com.sanbait.luxsystem.capabilities.ILuxStorage)) {
+                                event.getToolTip().add(net.minecraft.network.chat.Component
+                                        .translatable("tooltip.nexuscore.hold_shift")
+                                        .withStyle(net.minecraft.ChatFormatting.GRAY));
+                            }
                         }
                     });
         }
@@ -388,7 +403,8 @@ public class NexusCore {
                 RENDER_PARTICLES = !RENDER_PARTICLES;
                 net.minecraft.client.Minecraft.getInstance().player.displayClientMessage(
                         net.minecraft.network.chat.Component
-                                .literal("§d[NexusCore] Particles: " + (RENDER_PARTICLES ? "ON" : "OFF")),
+                                .translatable(RENDER_PARTICLES ? "message.nexuscore.particles.on"
+                                        : "message.nexuscore.particles.off"),
                         true);
             }
         }

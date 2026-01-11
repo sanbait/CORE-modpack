@@ -1,0 +1,10 @@
+{
+  "preset": "FPG_I_AM_NOT_AFRAID_BUT",
+  "noFogGameModes": [
+    "ADVENTURE",
+    "SPECTATOR",
+    "SURVIVAL",
+    "CREATIVE"
+  ],
+  "version": 3
+}
