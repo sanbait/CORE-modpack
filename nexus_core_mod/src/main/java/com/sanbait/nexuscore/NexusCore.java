@@ -133,19 +133,50 @@ public class NexusCore {
     @net.minecraftforge.fml.common.Mod.EventBusSubscriber(modid = MODID, bus = net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus.FORGE)
     public static class ForgeEvents {
         @net.minecraftforge.eventbus.api.SubscribeEvent
+        public static void onEntityJoinLevel(net.minecraftforge.event.entity.EntityJoinLevelEvent event) {
+            if (event.getEntity() instanceof net.minecraft.world.entity.monster.Monster monster) {
+                // Prevent Duplicate Goals: Check if we already have a specialized
+                // CoreAttackGoal
+                boolean hasGoal = monster.targetSelector.getAvailableGoals().stream()
+                        .anyMatch(goal -> goal.getGoal() instanceof CoreAttackGoal);
+
+                if (!hasGoal) {
+                    monster.targetSelector.addGoal(2, new CoreAttackGoal(monster, true));
+                }
+            }
+
+            // State-Based Lighting: Ensure light exists when Core joins level
+            if (event.getEntity() instanceof NexusCoreEntity core && !event.getLevel().isClientSide) {
+                com.sanbait.nexuscore.util.ServerLightManager.forceCoreLight(core);
+            }
+        }
+
+        public static class CoreAttackGoal
+                extends net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal<NexusCoreEntity> {
+            public CoreAttackGoal(net.minecraft.world.entity.monster.Monster mob, boolean mustSee) {
+                super(mob, NexusCoreEntity.class, mustSee);
+            }
+        }
+
+        @net.minecraftforge.eventbus.api.SubscribeEvent
         public static void onLivingChangeTarget(net.minecraftforge.event.entity.living.LivingChangeTargetEvent event) {
             if (event.getOriginalTarget() instanceof NexusCoreEntity core) {
                 // If the mob was targeting Core, and tries to switch...
                 if (event.getNewTarget() != core) {
-                    // Check distance (if still close enough, deny switch)
+                    // ALLOW switching to Player (Self defense)
+                    if (event.getNewTarget() instanceof net.minecraft.world.entity.player.Player) {
+                        return;
+                    }
+
+                    // Check distance (if still close enough, deny switch to random stuff like
+                    // villagers)
                     if (event.getEntity().distanceToSqr(core) < 2500) { // 50 blocks sq
-                        event.setCanceled(true); // Force keep target
+                        event.setCanceled(true); // Force keep target on Core
                     }
                 }
             }
         }
 
-        // Prevent throwing the core item
         // Prevent throwing the core item
         @net.minecraftforge.eventbus.api.SubscribeEvent
         public static void onItemToss(net.minecraftforge.event.entity.item.ItemTossEvent event) {
@@ -183,6 +214,26 @@ public class NexusCore {
             }
         }
 
+        @net.minecraftforge.eventbus.api.SubscribeEvent
+        public static void onPlayerTick(net.minecraftforge.event.TickEvent.PlayerTickEvent event) {
+            if (event.phase == net.minecraftforge.event.TickEvent.Phase.END && !event.player.level().isClientSide
+                    && event.player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+                com.sanbait.nexuscore.util.ServerLightManager.tickPlayer(serverPlayer);
+            }
+        }
+
+        @net.minecraftforge.eventbus.api.SubscribeEvent
+        public static void onPlayerLogout(
+                net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
+            if (event.getEntity() instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+                com.sanbait.nexuscore.util.ServerLightManager.onPlayerLoggedOut(serverPlayer);
+            }
+        }
+
+        @net.minecraftforge.eventbus.api.SubscribeEvent
+        public static void onEquipmentChange(net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent event) {
+            com.sanbait.nexuscore.util.ServerLightManager.onEquipmentChange(event);
+        }
     }
 
     @net.minecraftforge.fml.common.Mod.EventBusSubscriber(modid = MODID, bus = net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus.MOD, value = net.minecraftforge.api.distmarker.Dist.CLIENT)

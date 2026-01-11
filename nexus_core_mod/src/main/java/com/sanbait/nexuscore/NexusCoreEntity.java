@@ -29,6 +29,7 @@ public class NexusCoreEntity extends PathfinderMob implements GeoEntity {
     public NexusCoreEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
         this.noCulling = true;
+        this.setNoAi(true); // Disable AI for the Core itself to save performance
     }
 
     @Override
@@ -77,11 +78,22 @@ public class NexusCoreEntity extends PathfinderMob implements GeoEntity {
     private net.minecraft.core.BlockPos anchorPos = null;
 
     @Override
+    public void remove(RemovalReason reason) {
+        super.remove(reason);
+        if (!this.level().isClientSide) {
+            com.sanbait.nexuscore.util.ServerLightManager.onCoreRemoved(this);
+            com.sanbait.luxsystem.CoreRadiusManager.removeCore(this);
+        }
+    }
+
+    @Override
     public void tick() {
         super.tick();
 
         // ANCHOR LOGIC: Force position to stay at anchor
         if (!this.level().isClientSide) {
+            com.sanbait.luxsystem.CoreRadiusManager.addCore(this); // Ensure registered
+
             if (this.anchorPos == null) {
                 this.anchorPos = this.blockPosition(); // Set anchor on first tick/spawn
             } else if (this.distanceToSqr(this.anchorPos.getX() + 0.5, this.anchorPos.getY(),
@@ -90,11 +102,20 @@ public class NexusCoreEntity extends PathfinderMob implements GeoEntity {
                 this.setDeltaMovement(0, 0, 0); // Kill momentum
             }
 
-            // Server Side Logic
+            // Server Side Logic - OPTIMIZED TICKS
+            // Mob Attraction is now handled by Vanilla AI Goals (EntityJoinLevelEvent)
+            // Apply buffs and charge items every 1 second (20 ticks)
+            // User requested events, but for "Area of Effect" charging, a centralized
+            // periodic check
+            // from the Source (Core) is the most performant "Server Event" we can create.
             if (this.tickCount % 20 == 0) {
-                attractMobs();
                 applyBuffs();
+                chargeNearbyItems();
             }
+
+            // Server Side Light Manager - Removed periodic tick as per user request (State
+            // Based)
+            // com.sanbait.nexuscore.util.ServerLightManager.tickCore(this);
         } else {
             // Client Side Logic (Visuals)
             spawnRadiusParticles();
@@ -152,6 +173,43 @@ public class NexusCoreEntity extends PathfinderMob implements GeoEntity {
         return amount + "x " + item.getDescription().getString();
     }
 
+    private void chargeNearbyItems() {
+        double radius = NexusCoreConfig.BASE_RADIUS.get()
+                + (this.getCurrentLevel() * NexusCoreConfig.RADIUS_PER_LEVEL.get());
+        AABB searchBox = this.getBoundingBox().inflate(radius);
+
+        java.util.List<net.minecraft.world.entity.player.Player> players = this.level().getEntitiesOfClass(
+                net.minecraft.world.entity.player.Player.class, searchBox);
+
+        for (net.minecraft.world.entity.player.Player player : players) {
+            // Scan inventory for ILuxStorage items
+            // Main hand
+            chargeItem(player.getMainHandItem());
+            chargeItem(player.getOffhandItem());
+            // Armor
+            for (net.minecraft.world.item.ItemStack armor : player.getArmorSlots()) {
+                chargeItem(armor);
+            }
+        }
+    }
+
+    private void chargeItem(net.minecraft.world.item.ItemStack stack) {
+        if (stack.getItem() instanceof com.sanbait.luxsystem.capabilities.ILuxStorage) {
+            int current = stack.getOrCreateTag().getInt("LuxStored");
+            // Hardcoded capacity check for now since we know our items.
+            // In future use capability properly.
+            int cap = 1000; // Default
+            if (stack.getItem() instanceof com.sanbait.luxsystem.items.LuxArmorItem armor)
+                cap = armor.getMaxLuxStored();
+            if (stack.getItem() instanceof com.sanbait.luxsystem.items.LuxPickaxeItem pick)
+                cap = pick.getMaxLuxStored();
+
+            if (current < cap) {
+                stack.getOrCreateTag().putInt("LuxStored", current + 1);
+            }
+        }
+    }
+
     private void applyBuffs() {
         double radius = NexusCoreConfig.BASE_RADIUS.get()
                 + (this.getCurrentLevel() * NexusCoreConfig.RADIUS_PER_LEVEL.get());
@@ -167,15 +225,22 @@ public class NexusCoreEntity extends PathfinderMob implements GeoEntity {
     }
 
     private void spawnRadiusParticles() {
-        if (!NexusCore.RENDER_PARTICLES)
-            return; // Toggle check
+        if (!NexusCore.RENDER_PARTICLES || !this.isAlive())
+            return; // Toggle check & Dead check
+
+        // OPTIMIZATION: Distance Culling (Don't render if player is far away)
+        net.minecraft.client.player.LocalPlayer player = net.minecraft.client.Minecraft.getInstance().player;
+        if (player != null && this.distanceToSqr(player) > 64 * 64) {
+            return;
+        }
 
         double radius = NexusCoreConfig.BASE_RADIUS.get()
                 + (this.getCurrentLevel() * NexusCoreConfig.RADIUS_PER_LEVEL.get());
 
         // Spawn particles in a circle
-        // Increased count to 10 per tick and lifted Y by 0.5 to be visible above ground
-        for (int i = 0; i < 10; i++) {
+        // OPTIMIZATION: Reduced from 10 per tick (200/sec) to 2 per tick (40/sec) to
+        // save FPS.
+        for (int i = 0; i < 2; i++) {
             double angle = this.random.nextDouble() * 2 * Math.PI;
             double x = this.getX() + radius * Math.cos(angle);
             double z = this.getZ() + radius * Math.sin(angle);
@@ -185,19 +250,20 @@ public class NexusCoreEntity extends PathfinderMob implements GeoEntity {
         }
     }
 
-    private void attractMobs() {
-        double radius = NexusCoreConfig.BASE_RADIUS.get()
-                + (this.getCurrentLevel() * NexusCoreConfig.RADIUS_PER_LEVEL.get());
-        AABB searchBox = this.getBoundingBox().inflate(radius);
-        this.level().getEntitiesOfClass(PathfinderMob.class, searchBox,
-                entity -> entity instanceof net.minecraft.world.entity.monster.Enemy).forEach(mob -> {
-                    net.minecraft.world.entity.LivingEntity currentTarget = mob.getTarget();
-                    // Fix: Don't steal aggro if mob is already fighting a Human/Player
-                    if (currentTarget == null || (!(currentTarget instanceof net.minecraft.world.entity.player.Player)
-                            && currentTarget != this)) {
-                        mob.setTarget(this);
-                    }
-                });
+    @Override
+    public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount) {
+        if (!this.level().isClientSide) {
+            // Visuals: Bleed particles (Redstone dust look-alike or purely red particles)
+            if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                serverLevel.sendParticles(
+                        new net.minecraft.core.particles.DustParticleOptions(new org.joml.Vector3f(1.0f, 0.0f, 0.0f),
+                                1.0f),
+                        this.getX(), this.getY() + 1.0, this.getZ(),
+                        20, 0.5, 0.5, 0.5, 0.1);
+                this.playSound(net.minecraft.sounds.SoundEvents.IRON_GOLEM_DAMAGE, 1.0F, 1.0F);
+            }
+        }
+        return super.hurt(source, amount);
     }
 
     @Override

@@ -1,0 +1,18 @@
+{
+    "replace": false,
+    "values": [
+        "minecraft:chest",
+        "minecraft:trapped_chest",
+        "minecraft:furnace",
+        "minecraft:blast_furnace",
+        "minecraft:smoker",
+        "minecraft:barrel",
+        "minecraft:hopper",
+        "minecraft:dropper",
+        "minecraft:dispenser",
+        "#create:kinetic_appliances",
+        "#create:contraption_blocks"
+    ],
+    "complexity": 5,
+    "description": "Defining blocks affected by phantom mechanics"
+}

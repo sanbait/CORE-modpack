@@ -13,5 +13,19 @@
     "overlay.nexuscore.repair_cost": "§cRepair Cost: §f%s",
     "overlay.nexuscore.upgrade_cost": "§eUpgrade Cost: §f%s",
     "message.nexuscore.max_level": "§6Max Level Reached!",
-    "message.nexuscore.core_removed": "Core removed!"
+    "message.nexuscore.core_removed": "Core removed!",
+    "item.luxsystem.lux_pickaxe": "Lux Pickaxe",
+    "item.luxsystem.lux_sword": "Lux Sword",
+    "item.luxsystem.lux_helmet": "Lux Helmet",
+    "item.luxsystem.lux_chestplate": "Lux Chestplate",
+    "item.luxsystem.lux_leggings": "Lux Leggings",
+    "item.luxsystem.lux_boots": "Lux Boots",
+    "item.luxsystem.liquid_lux_bucket": "Liquid Lux Bucket",
+    "item.luxsystem.lux_crystal": "Lux Crystal",
+    "item.luxsystem.concentrated_lux_crystal": "Concentrated Lux Crystal",
+    "item.luxsystem.ancient_lux_vase": "Ancient Lux Vase",
+    "item.luxsystem.ancient_lux_orb": "Ancient Lux Orb",
+    "item.luxsystem.lux_crystal_fragment": "Lux Fragment",
+    "item.luxsystem.fossilized_lux_amber": "Fossilized Lux Amber",
+    "message.luxsystem.phantom_warning": "§8[§5Phantom§8] §7Matter is unstable. Nexus Light required."
 }

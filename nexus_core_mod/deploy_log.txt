@@ -1,0 +1,4 @@
+Microsoft Windows [Version 10.0.26200.7462]
+(c) Корпорация Майкрософт (Microsoft Corporation). Все права защищены.
+
+C:\Users\sanba\AppData\Roaming\PrismLauncher\instances\CORE\nexus_core_mod>
