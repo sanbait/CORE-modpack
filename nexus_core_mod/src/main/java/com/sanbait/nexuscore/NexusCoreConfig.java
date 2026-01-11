@@ -24,7 +24,7 @@ public class NexusCoreConfig {
                 BUILDER.push("Nexus Core Settings");
 
                 BASE_RADIUS = BUILDER.comment("Base radius for aggro and buffs at level 1")
-                                .defineInRange("baseRadius", 10.0, 1.0, 100.0);
+                                .defineInRange("baseRadius", 12.0, 1.0, 100.0);
 
                 RADIUS_PER_LEVEL = BUILDER.comment("Extra radius added per level (Radius = Base + Level * PerLevel)")
                                 .defineInRange("radiusPerLevel", 2.0, 0.0, 50.0);

@@ -1,53 +1,132 @@
-# Nexus Core Mod - User Guide
+# Nexus Core Mod - Official Documentation
 
-## Installation Instructions
-
-to play with this mod with your friends, follow these steps:
-
-1. **Install Minecraft Forge** (Version 1.20.1 - 47.x.x).
-2. **Download the Dependencies**:
-    * You need **GeckoLib** for 1.20.1 (Version 4.4.2 or newer).
-    * *Without GeckoLib, the game will crash!*
-3. **Install the Mod**:
-    * Place `nexus_core-1.1.17.jar` into your `mods` folder.
-    * Place the `geckolib` jar into your `mods` folder.
-4. **Launch the Game!**
+**Version:** 1.1.18 (Java Forge 1.20.1)  
+**Dependencies:** GeckoLib 4.4.2+  
 
 ---
 
-## Configuration Guide
+## 📖 Overview
 
-You can customize the Nexus Core balance without reinstalling the mod.
+**Nexus Core** is the heart of the "Entropy Core" modpack. It introduces a central entity — **The Core** — which serves as:
 
-**Config File Location**:  
-`config/nexuscore-common.toml`  
-*(This file appears after you launch the game with the mod once)*
+1. **The "King" to protect:** If it dies (at Level 1), the game is over.
+2. **Power Generator:** It generates "Lux" (Light Energy) to charge your tools and armor.
+3. **Sanctuary:** It provides buffs (Regeneration, Resistance) to nearby players.
 
-### Available Settings
+This mod is split into two logical modules:
 
-#### 1. General Stats
+* `nexuscore`: The Core entity, its AI, and upgrading logic.
+* `luxsystem`: The energy system, machines, and fluids associated with Light.
 
-* **`baseRadius`**: The protection radius at Level 1 (Default: 12.0 blocks).
-* **`radiusPerLevel`**: How much the radius grows per level (Default: 2.0 blocks).
-  * *Example*: At Level 10, Radius = 12 + (10 * 2) = 32 blocks.
-* **`hpPerLevel`**: Health per level (Default: 200 HP).
-  * *Example*: Level 10 has 2000 HP.
+---
 
-#### 2. Upgrade & Repair Costs
+## 💎 The Nexus Core Entity
 
-* **`upgradeCosts`**: A list defining what item is needed for each level.
-* **Format**: `"modid:item_name|amount"`
-* **Default Values**:
-  * Level 1 -> 2: Copper Ingot
-  * Level 2 -> 3: Iron Ingot
-  * ...
-  * Level 9 -> 10: Beacon
+**Entity ID:** `nexuscore:core`  
+**Summon Command:** `/summon nexuscore:core`
 
-**How to change:**
-Open the `.toml` file with Notepad.
-Change `"minecraft:copper_ingot|1"` to whatever you want, e.g., `"minecraft:diamond|5"`.
-Restart the game to apply changes.
+The Core is a living, growing crystal structure. It is anchored to its spawn position and cannot be moved by pistons or physics.
 
-### Visuals
+### 1. Growth & Stats
 
-* **Toggle Particles**: Press **`P`** (default) in-game to turn the radius particles on/off.
+The Core has **10 Levels**. As it levels up, it grows physically taller, creates a larger protection radius, and generates more energy.
+
+| Feature | Formula / value | Example (Lvl 1) | Example (Lvl 10) |
+| :--- | :--- | :--- | :--- |
+| **HP** | `Level * 200` | 200 HP | 2000 HP |
+| **Height** | `1.0 * Level` blocks | 1 Block | 10 Blocks |
+| **Radius** | `12 + (Level * 2)` | 14 Blocks | 32 Blocks |
+| **Lux Gen** | `Level * 1` Lux/tick | 1 L/t | 10 L/t |
+| **Lux Cap** | `Level * 1000` Lux | 1000 Lux | 10,000 Lux |
+
+### 2. Interaction & Upgrading
+
+**Right-click the Core with an item to interact.**
+
+* **Heal (Priority):** If the Core is damaged, the item is consumed to **Heal 20 HP** (10% of base).
+  * *Cost:* 1x Upgrade Item for the *current* level tier.
+* **Upgrade:** If the Core is at full health, the item consumes a stack to **Level Up**.
+  * *Cost:* Defined in Config (`upgradeCosts`). Default is usually crystals or rare items.
+
+**Default Upgrade Costs (Configurable):**
+
+* **Lvl 1 -> 2:** 4x Lux Crystal
+* **Lvl 2 -> 3:** 8x Lux Crystal
+* ...
+* **Lvl 9 -> 10:** 2x Ancient Lux Orb
+
+### 3. Death Mechanics
+
+* **If Level > 1:** The Core does **NOT** die. It loses 1 Level, plays a "Break" sound, and acts as a checkpoint.
+* **If Level = 1:** The Core dies permanently. Game Over condition.
+
+---
+
+## ⚡ The Lux System (Energy)
+
+**Lux** is the magical energy form acting as "Liquid Light".
+
+### 1. Generating & Charging
+
+* **Source:** The Nexus Core passively generates Lux.
+* **Charging:** Every **1.0 Second** (20 ticks), the Core scans all players within its **Radius**.
+  * It charges items in your **Main Hand**, **Off Hand**, and **Armor Slots**.
+  * **Rate:** ~50 Lux per scan (burst).
+  * *Note:* Items must have the `LuxCapability`. Vanilla swords/pickaxes are supported by default (configured in TOML).
+
+### 2. Supported Items (Default)
+
+The mod automatically attaches Lux capacity to vanilla items:
+
+* **Wooden Tier:** 100 Lux
+* **Diamond Tier:** 2000 Lux
+* **Netherite Tier:** 5000 Lux
+* *Configurable in `nexuscore-common.toml`*
+
+---
+
+## ⚙️ Configuration Guide
+
+### 1. Core Settings (`nexuscore-common.toml`)
+
+Located in `config/nexuscore-common.toml`.
+
+#### [General]
+
+* `baseRadius` (Default: 12.0): Starting radius.
+* `radiusPerLevel` (Default: 2.0): Added radius per level.
+* `hpPerLevel` (Default: 200.0): HP multiplier.
+
+#### [Upgrades]
+
+* `upgradeCosts`: A list of strings determining the cost to reach the *next* level.
+  * Format: `"modid:item_name|quantity"`
+  * *Important:* This lists the cost for 1->2, then 2->3, etc.
+
+#### [Lux System]
+
+* `itemLuxCapacities`: Add custom mod items here to give them "battery" properties.
+  * Format: `"modid:item|capacity"`
+* `coreLuxGenerationPerLevel`: Lux per tick multiplier.
+
+### 2. Machines (`luxsystem-common.toml`)
+
+Located in `config/luxsystem-common.toml`.
+
+* `extractorSpeed` / `condenserSpeed`: Operation time in ticks.
+* `tankCapacity`: Fluid limit (mB) for machines.
+* `manualInfusionDuration`: Time in ticks for Phantom Infusion crafting.
+
+---
+
+## 🛠 Troubleshooting & Debug
+
+* **Particles:** If FPS is low, Core particles are culled after 64 blocks distance.
+* **Invisible Golem:** This version uses `GeckoLib` rendering. If the Core is invisible, ensure you have the GeckoLib mod installed.
+* **Commands:**
+  * `/lux set <amount>` (if enabled in dev) - Set Lux amount of held item.
+  * `/summon nexuscore:core` - Spawn a fresh Core.
+
+---
+*Maintained by: Entropy Core Dev Team*
+*Last Update: Jan 2026*
