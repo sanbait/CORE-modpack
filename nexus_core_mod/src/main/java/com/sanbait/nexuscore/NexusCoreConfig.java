@@ -15,6 +15,9 @@ public class NexusCoreConfig {
         public static final ForgeConfigSpec.BooleanValue ENABLE_PLAYER_LIGHTS;
         public static final ForgeConfigSpec.ConfigValue<java.util.List<? extends String>> PLAYER_LIGHT_ITEMS;
 
+        // Lux System
+        public static final ForgeConfigSpec.ConfigValue<java.util.List<? extends String>> ITEM_LUX_CAPACITIES;
+
         static {
                 BUILDER.push("Nexus Core Settings");
 
@@ -63,6 +66,28 @@ public class NexusCoreConfig {
                                                 "minecraft:ochre_froglight",
                                                 "minecraft:pearlescent_froglight",
                                                 "minecraft:verdant_froglight"), entry -> entry instanceof String);
+
+                BUILDER.pop();
+
+                BUILDER.push("Lux System");
+
+                ITEM_LUX_CAPACITIES = BUILDER.comment("Define specific Lux capacities for items.",
+                                "Format: 'modid:item_id|capacity'",
+                                "Default capacity for tagged items if not listed here is 1000.")
+                                .defineList("itemLuxCapacities", java.util.Arrays.asList(
+                                                "minecraft:wooden_sword|100",
+                                                "minecraft:stone_sword|200",
+                                                "minecraft:iron_sword|500",
+                                                "minecraft:golden_sword|1000",
+                                                "minecraft:diamond_sword|2000",
+                                                "minecraft:netherite_sword|5000",
+
+                                                "minecraft:wooden_pickaxe|100",
+                                                "minecraft:stone_pickaxe|200",
+                                                "minecraft:iron_pickaxe|500",
+                                                "minecraft:golden_pickaxe|1000",
+                                                "minecraft:diamond_pickaxe|2000",
+                                                "minecraft:netherite_pickaxe|5000"), entry -> entry instanceof String);
 
                 BUILDER.pop();
 

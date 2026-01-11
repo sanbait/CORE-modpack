@@ -1,100 +1,35 @@
-# Nexus Core Mod - Техническая Документация
+# Nexus Core - Technical Guide
 
-## 1. Механика Агрессии (Aggro Logic)
+## Key Systems
 
-Система агрессии мобов по отношению к Ядру (Nexus Core) была переписана для максимальной производительности (0% лагов) и "ванильного" поведения.
+### 1. Universal Lux
 
-### Как это работает
+Items can store "Lux" energy if they are:
 
-1. **Инъекция Цели (Injection):**
-    * При спавне любого враждебного моба (`Monster`), событие `EntityJoinLevelEvent` добавляет ему в AI новую цель: `NearestAttackableTargetGoal`.
-    * **Приоритет:** 2 (очень высокий).
-    * **Результат:** Моб видит Ядро как врага сразу при появлении, наравне с Игроком.
-    * *Где находится:* `NexusCore.java` -> `ForgeEvents.onEntityJoinLevel`.
+- A recognized mod item (LuxPickaxe, LuxArmor).
+- Tagged with `#nexuscore:lux_receptive` (JSON tag).
+- Listed in the `itemLuxCapacities` configuration.
 
-2. **Удержание Цели (Lock-on):**
-    * Событие `LivingChangeTargetEvent` следит за сменой цели у мобов.
-    * Если моб уже атакует Ядро, ему **ЗАПРЕЩЕНО** переключаться на другие цели (жители, животные).
-    * **Исключение (Месть):** Мобу **РАЗРЕШЕНО** переключиться на Игрока (`Player`). Это сохраняет механику самообороны: если игрок ударит моба, тот развернется на него.
-    * *Где находится:* `NexusCore.java` -> `ForgeEvents.onLivingChangeTarget`.
+**How it works:**
 
-### Как вернуть старую механику (Тики)
+- `AttachCapabilitiesEvent` adds a `LuxCapability` to valid items.
+- Capacity is determined by Config > Item Class > Default (1000).
 
-Если потребуется вернуть старую систему (поиск мобов в радиусе каждый тик), нужно:
+### 2. Event-Based Optimization
 
-1. В `NexusCoreEntity.java` вернуть метод `attractMobs()`:
+To prevent lag, we strictly avoid `onUpdate` or `tick` methods for constant polling.
 
-```java
-    private void attractMobs() {
-        double radius = NexusCoreConfig.BASE_RADIUS.get()
-                + (this.getCurrentLevel() * NexusCoreConfig.RADIUS_PER_LEVEL.get());
-        net.minecraft.world.phys.AABB searchBox = this.getBoundingBox().inflate(radius);
-        this.level().getEntitiesOfClass(net.minecraft.world.entity.PathfinderMob.class, searchBox,
-                entity -> entity instanceof net.minecraft.world.entity.monster.Enemy).forEach(mob -> {
-                    net.minecraft.world.entity.LivingEntity currentTarget = mob.getTarget();
-                    if (currentTarget == null || (!(currentTarget instanceof net.minecraft.world.entity.player.Player)
-                            && currentTarget != this)) {
-                        mob.setTarget(this);
-                    }
-                });
-    }
-```
+- **Lighting**: Uses `LivingEquipmentChangeEvent` to track players holding light sources.
+- **Charging**: `NexusCoreEntity` periodically (every 1s) scans nearby players and pushes charge to them (Server Side).
 
-1. В методе `tick()` добавить вызов: `if (this.tickCount % 20 == 0) attractMobs();`
-2. В `NexusCore.java` удалить обработчик `onEntityJoinLevel`.
+### 3. Configuration
 
----
+Located at `config/nexus-core-common.toml`.
 
-## 2. Конфигурация (nexuscore-common.toml)
+- **Lighting**: Toggle player lights, list of light items.
+- **Lux System**: `itemLuxCapacities` - list of "modid:item|capacity".
 
-Настройки находятся в папке `config/nexuscore-common.toml`.
+## Dev Usage
 
-| Параметр | Описание | Значение по умолчанию |
-| :--- | :--- | :--- |
-| `baseRadius` | Базовый радиус действия Ядра (агр и баффы) на 1 уровне. | `10.0` блоков |
-| `radiusPerLevel` | Сколько радиуса добавляется за каждый уровень прокачки. <br> *Формула: Радиус = База + (Уровень * Прирост)* | `2.0` блока |
-| `hpPerLevel` | Количество HP, добавляемое за уровень. <br> *Формула: MaxHP = Уровень * HP_Per_Level* | `200.0` HP |
-| `upgradeCosts` | Список ресурсов для улучшения Ядра по уровням. <br> Формат: `modid:item_name|amount` | См. конфиг |
-
----
-
-## 3. Компоненты Lux System
-
-Система предметов и блоков, взаимодействующих с Ядром.
-
-* **Lux Condenser (Конденсатор):**
-  * Превращает "Жидкий Люкс" в Кристаллы.
-  * **Зачем нужен:** Это единственный способ получить кристаллы для прокачки Ядра.
-  * *Важно:* Размер инвентаря жестко зафиксирован (2 слота).
-
-* **Lux Extractor (Экстрактор):**
-  * Вытягивает Люкс из предметов/блоков и превращает в жидкость.
-  * **Зачем нужен:** Источник топлива для Конденсатора.
-
-* **Предметы:**
-  * **Lux Sword:** Накладывает Ослепление, тратит заряд. Заряжается возле Ядра. (Shift для инфо).
-  * **Lux Armor:** Дает эффекты (Скорость, Прыжок, Ночное зрение) пока есть заряд.
-
----
-
-## 4. Освещение (Lighting) & Sanity
-
-Мод реализует уникальную систему **Серверного Света** для совместимости с модами на Рассудок (Sanity).
-
-* **Ядро:** Создает реальный источник света (уровень 15) в своем центре. Это предотвращает спавн мобов и восстанавливает рассудок.
-* **Игрок (Факелы):**
-  * Если игрок держит факел/фонарь, сервер создает невидимый источник света на месте головы игрока.
-  * Это позволяет механике Sanity видеть "свет" вокруг игрока, даже если Dynamic Lights установлен только на клиенте.
-  * **Оптимизация:** Просчет происходит 1 раз в 0.5 секунд и только при движении.
-  * **Конфиг:** Можно отключить `enablePlayerLights = false` в `nexuscore-common.toml`.
-
----
-
-## 5. Оптимизация
-
-Для предотвращения лагов серверной стороны:
-
-* У сущности `NexusCoreEntity` включен параметр `setNoAi(true)`. Это отключает нативные расчёты путей самого Ядра (так как оно статично).
-* Логика баффов (Регенерация игрокам) срабатывает раз в **2 секунды** (40 тиков), а не каждый тик.
-
-*Документация актуальна для версии 1.1.18+*
+To build: `gradlew build` or use `UPDATE_MOD.bat`.
+To commit: use `COMMIT_AND_PUSH.bat`.

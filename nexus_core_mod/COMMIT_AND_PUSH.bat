@@ -1,30 +1,26 @@
 @echo off
-setlocal
-echo ==========================================
-echo      Nexus Core Mod - Git Auto-Commit
-echo ==========================================
+echo Starting automated Lux-Core backup...
 
-cd /d "%~dp0"
+echo Check if git is installed
+where git
+if %errorlevel% neq 0 (
+    echo [ERROR] Git is not installed or not in PATH.
+    echo Please install Git from https://git-scm.com/downloads
+    echo Close this window manually if needed.
+    pause
+    exit /b
+)
 
-echo Checking Git status...
-git status
-
-echo.
-set /p msg="Enter commit message (default: Update): "
-if "%msg%"=="" set msg=Update
-
-echo.
-echo Adding all files...
+echo Adding files...
 git add .
+set /p MSG="Enter commit message (Press Enter for 'Update'): "
+if "%MSG%"=="" set MSG=Update
+echo Committing with message: %MSG%
+git commit -m "%MSG%"
+echo Pushing to remote...
+git push
 
 echo.
-echo Committing...
-git commit -m "%msg%"
-
-echo.
-echo ==========================================
-echo Commit Complete. 
-echo (Note: Remote push is skipped as no remote is configured yet. 
-echo  If you have a repo, run 'git push' manually or add it here)
-echo ==========================================
+echo Process finished.
+echo If you see errors above, please read them.
 pause

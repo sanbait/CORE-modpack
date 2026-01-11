@@ -20,8 +20,12 @@ import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class NexusCoreEntity extends PathfinderMob implements GeoEntity {
+public class NexusCoreEntity extends PathfinderMob
+        implements GeoEntity, com.sanbait.luxsystem.capabilities.ILuxStorage {
     private static final EntityDataAccessor<Integer> CURRENT_LEVEL = SynchedEntityData.defineId(NexusCoreEntity.class,
+            EntityDataSerializers.INT);
+    // NEW: Sync Current Lux to Client for Rendering
+    private static final EntityDataAccessor<Integer> CURRENT_LUX = SynchedEntityData.defineId(NexusCoreEntity.class,
             EntityDataSerializers.INT);
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
@@ -36,10 +40,20 @@ public class NexusCoreEntity extends PathfinderMob implements GeoEntity {
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(CURRENT_LEVEL, 1); // Start at Level 1
+        this.entityData.define(CURRENT_LUX, 0); // Start with 0 Lux
     }
 
     public int getCurrentLevel() {
         return this.entityData.get(CURRENT_LEVEL);
+    }
+
+    // Lux getters/setters using EntityData
+    public int getCurrentLux() {
+        return this.entityData.get(CURRENT_LUX);
+    }
+
+    public void setCurrentLux(int lux) {
+        this.entityData.set(CURRENT_LUX, lux);
     }
 
     public void setCurrentLevel(int level) {
@@ -108,6 +122,18 @@ public class NexusCoreEntity extends PathfinderMob implements GeoEntity {
             // User requested events, but for "Area of Effect" charging, a centralized
             // periodic check
             // from the Source (Core) is the most performant "Server Event" we can create.
+
+            // Lux Regeneration Logic
+            int genPerTick = this.getCurrentLevel() * NexusCoreConfig.CORE_LUX_GENERATION_PER_LEVEL.get();
+            int maxLux = this.getCurrentLevel() * NexusCoreConfig.CORE_LUX_CAPACITY_PER_LEVEL.get();
+
+            // Regenerate
+            int current = getCurrentLux();
+            if (current < maxLux) {
+                int next = Math.min(current + genPerTick, maxLux);
+                setCurrentLux(next);
+            }
+
             if (this.tickCount % 20 == 0) {
                 applyBuffs();
                 chargeNearbyItems();
@@ -131,6 +157,7 @@ public class NexusCoreEntity extends PathfinderMob implements GeoEntity {
             compound.putInt("AnchorY", this.anchorPos.getY());
             compound.putInt("AnchorZ", this.anchorPos.getZ());
         }
+        compound.putInt("NexusLux", this.getCurrentLux());
     }
 
     @Override
@@ -138,6 +165,9 @@ public class NexusCoreEntity extends PathfinderMob implements GeoEntity {
         super.readAdditionalSaveData(compound);
         if (compound.contains("NexusLevel")) {
             this.setCurrentLevel(compound.getInt("NexusLevel"));
+        }
+        if (compound.contains("NexusLux")) {
+            this.setCurrentLux(compound.getInt("NexusLux"));
         }
         if (compound.contains("AnchorX")) {
             this.anchorPos = new net.minecraft.core.BlockPos(
@@ -194,20 +224,62 @@ public class NexusCoreEntity extends PathfinderMob implements GeoEntity {
     }
 
     private void chargeItem(net.minecraft.world.item.ItemStack stack) {
-        if (stack.getItem() instanceof com.sanbait.luxsystem.capabilities.ILuxStorage) {
-            int current = stack.getOrCreateTag().getInt("LuxStored");
-            // Hardcoded capacity check for now since we know our items.
-            // In future use capability properly.
-            int cap = 1000; // Default
-            if (stack.getItem() instanceof com.sanbait.luxsystem.items.LuxArmorItem armor)
-                cap = armor.getMaxLuxStored();
-            if (stack.getItem() instanceof com.sanbait.luxsystem.items.LuxPickaxeItem pick)
-                cap = pick.getMaxLuxStored();
+        int coreLux = getCurrentLux();
+        if (coreLux <= 0)
+            return; // No power in core
 
-            if (current < cap) {
-                stack.getOrCreateTag().putInt("LuxStored", current + 1);
+        stack.getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP).ifPresent(cap -> {
+            int max = cap.getMaxLuxStored();
+            int current = cap.getLuxStored();
+            if (current < max) {
+                // Determine transfer rate (e.g. up to 10 per tick per item)
+                // Since this runs every 20 ticks (1 sec), let's give a chunk, e.g. 20 (1 per
+                // sec equivalent? no, faster)
+                // Let's make it snappy: 50 lux per second (pulse)
+                int transfer = 50;
+
+                // Cap by Core storage
+                int actualTransfer = Math.min(transfer, getCurrentLux());
+                // Cap by Item space
+                actualTransfer = Math.min(actualTransfer, max - current);
+
+                if (actualTransfer > 0) {
+                    cap.receiveLux(actualTransfer, false);
+                    extractLux(actualTransfer, false); // Drain from core
+                }
             }
+        });
+    }
+
+    // ILuxStorage Implementation
+    @Override
+    public int getLuxStored() {
+        return getCurrentLux();
+    }
+
+    @Override
+    public int getMaxLuxStored() {
+        return this.getCurrentLevel() * NexusCoreConfig.CORE_LUX_CAPACITY_PER_LEVEL.get();
+    }
+
+    @Override
+    public int receiveLux(int maxReceive, boolean simulate) {
+        int space = getMaxLuxStored() - getLuxStored();
+        int accepted = Math.min(space, maxReceive);
+        if (!simulate) {
+            setCurrentLux(getLuxStored() + accepted);
         }
+        return accepted;
+    }
+
+    @Override
+    public int extractLux(int maxExtract, boolean simulate) {
+        int current = getLuxStored();
+        int extracted = Math.min(current, maxExtract);
+        if (!simulate) {
+            setCurrentLux(current - extracted);
+        }
+        return extracted;
     }
 
     private void applyBuffs() {

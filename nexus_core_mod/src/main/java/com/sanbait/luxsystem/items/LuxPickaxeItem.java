@@ -76,9 +76,7 @@ public class LuxPickaxeItem extends PickaxeItem implements ILuxStorage {
                     .withStyle(ChatFormatting.BLUE));
             tooltip.add(Component.literal(" "));
 
-            int currentLux = getLux(stack);
-            tooltip.add(Component.literal("Lux: " + currentLux + " / " + capacity)
-                    .withStyle(ChatFormatting.AQUA));
+            // Lux Bar is handled globally now
         } else {
             tooltip.add(Component.translatable("tooltip.nexuscore.hold_shift")
                     .withStyle(ChatFormatting.GRAY));

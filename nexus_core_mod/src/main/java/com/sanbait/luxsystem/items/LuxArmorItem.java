@@ -76,10 +76,7 @@ public class LuxArmorItem extends ArmorItem implements ILuxStorage {
         if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
             tooltip.add(Component.translatable("tooltip.luxsystem.lux_armor_set_bonus")
                     .withStyle(ChatFormatting.GOLD));
-            // Lux Charge
-            int currentLux = getLux(stack);
-            tooltip.add(Component.literal("Lux: " + currentLux + " / " + capacity)
-                    .withStyle(ChatFormatting.AQUA));
+            // Lux Charge handled globally
         } else {
             tooltip.add(Component.translatable("tooltip.nexuscore.hold_shift")
                     .withStyle(ChatFormatting.GRAY));

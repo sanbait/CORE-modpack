@@ -42,9 +42,8 @@ public class NexusCore {
                         // SINGLETON RULE: Check if one already exists in loaded entities
                         // Manual AABB covering the world since getBounds is missing
                         java.util.List<NexusCoreEntity> existing = context.getLevel().getEntitiesOfClass(
-                                NexusCoreEntity.class,
-                                new net.minecraft.world.phys.AABB(-30000000.0D, -64.0D, -30000000.0D, 30000000.0D,
-                                        500.0D, 30000000.0D));
+                                NexusCoreEntity.class, new net.minecraft.world.phys.AABB(-30000000.0D, -64.0D,
+                                        -30000000.0D, 30000000.0D, 500.0D, 30000000.0D));
 
                         if (!existing.isEmpty()) {
                             context.getPlayer().displayClientMessage(net.minecraft.network.chat.Component
@@ -72,7 +71,8 @@ public class NexusCore {
                         net.minecraft.world.entity.LivingEntity target, net.minecraft.world.InteractionHand hand) {
                     if (target instanceof NexusCoreEntity core && player.isShiftKeyDown()) {
                         if (!player.level().isClientSide) {
-                            core.discard(); // Remove entity
+                            core.discard(); // Remove
+                                            // entity
                             // Drop item
                             core.spawnAtLocation(CORE_ITEM.get());
                             player.displayClientMessage(
@@ -113,13 +113,19 @@ public class NexusCore {
 
         // Register event handlers
         modEventBus.addListener(this::commonSetup);
+        modEventBus.addListener(this::registerCapabilities);
         modEventBus.addListener(this::entityAttributeCreation);
         modEventBus.addListener(this::clientSetup);
+        // Duplicate removed
 
         MinecraftForge.EVENT_BUS.register(this);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
+    }
+
+    private void registerCapabilities(net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent event) {
+        event.register(com.sanbait.luxsystem.capabilities.ILuxStorage.class);
     }
 
     private void entityAttributeCreation(EntityAttributeCreationEvent event) {
@@ -233,6 +239,121 @@ public class NexusCore {
         @net.minecraftforge.eventbus.api.SubscribeEvent
         public static void onEquipmentChange(net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent event) {
             com.sanbait.nexuscore.util.ServerLightManager.onEquipmentChange(event);
+        }
+
+        // Universal Lux Capability Attachment
+        @net.minecraftforge.eventbus.api.SubscribeEvent
+        public static void attachCapabilities(
+                net.minecraftforge.event.AttachCapabilitiesEvent<net.minecraft.world.item.ItemStack> event) {
+            net.minecraft.world.item.ItemStack stack = event.getObject();
+            // Check Tag: nexuscore:lux_receptive
+            // Since we can't easily check tags on ItemStack during attachment (sometimes
+            // tags aren't loaded yet on empty stacks),
+            // checking the Item's registry tag or config whitelist is safer.
+            // For now, let's look for our own items AND the tag.
+
+            boolean isLuxItem = stack.getItem() instanceof com.sanbait.luxsystem.capabilities.ILuxStorage;
+            // Note: If using pure capability, ILuxStorage on Item class is just a marker
+            // interface now, or we remove it.
+            // Let's support the legacy hardcoded items checking too.
+
+            if (isLuxItem || isReceptiveItem(stack)) {
+                com.sanbait.luxsystem.capabilities.LuxProvider provider = new com.sanbait.luxsystem.capabilities.LuxProvider();
+
+                // Determine Capacity
+                int capacity = 1000; // Default
+                if (stack.getItem() instanceof com.sanbait.luxsystem.items.LuxArmorItem armor) {
+                    capacity = armor.getMaxLuxStored();
+                } else if (stack.getItem() instanceof com.sanbait.luxsystem.items.LuxPickaxeItem pick) {
+                    capacity = pick.getMaxLuxStored();
+                }
+
+                // Config Override
+                int configCap = getCapacityFromConfig(stack);
+                if (configCap > 0) {
+                    capacity = configCap;
+                }
+
+                com.sanbait.luxsystem.capabilities.LuxCapability cap = new com.sanbait.luxsystem.capabilities.LuxCapability(
+                        capacity);
+                provider.setBackend(cap);
+
+                event.addCapability(new net.minecraft.resources.ResourceLocation(MODID, "lux_storage"), provider);
+            }
+        }
+
+        private static int getCapacityFromConfig(net.minecraft.world.item.ItemStack stack) {
+            java.util.List<? extends String> configs = NexusCoreConfig.ITEM_LUX_CAPACITIES.get();
+            net.minecraft.resources.ResourceLocation id = net.minecraftforge.registries.ForgeRegistries.ITEMS
+                    .getKey(stack.getItem());
+            if (id == null)
+                return -1;
+
+            String key = id.toString();
+            for (String entry : configs) {
+                String[] parts = entry.split("\\|");
+                if (parts.length == 2 && parts[0].equals(key)) {
+                    try {
+                        return Integer.parseInt(parts[1]);
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+            }
+            return -1;
+        }
+
+        @net.minecraftforge.eventbus.api.SubscribeEvent
+        public static void onItemTooltip(net.minecraftforge.event.entity.player.ItemTooltipEvent event) {
+            event.getItemStack().getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP)
+                    .ifPresent(cap -> {
+                        // Visual Bar Logic
+                        int current = cap.getLuxStored();
+                        int max = cap.getMaxLuxStored();
+                        float percent = (float) current / max;
+
+                        // Bar Construction (10 segments)
+                        int bars = (int) (percent * 10);
+                        StringBuilder bar = new StringBuilder();
+                        bar.append("§8["); // Dark Gray Bracket
+                        for (int i = 0; i < 10; i++) {
+                            if (i < bars) {
+                                bar.append("§b❙"); // Aqua Filled (or █)
+                            } else {
+                                bar.append("§7|"); // Gray Empty
+                            }
+                        }
+                        bar.append("§8]");
+
+                        // Calculate Duration based on typical usage (Armor = 1/5s, Tool = 1/use)
+                        // Let's assume constant usage for estimation (Armor drain)
+                        // 1 lux per 100 ticks (5 sec).
+                        // Minutes = (Lux * 5) / 60
+                        int minutesLeft = (current * 5) / 60;
+
+                        // Bar Line: [|||||-----] 70%
+                        event.getToolTip().add(net.minecraft.network.chat.Component.literal(
+                                bar.toString() + " §f" + (int) (percent * 100) + "%"));
+
+                        // Duration Line
+                        if (current > 0) {
+                            event.getToolTip().add(net.minecraft.network.chat.Component.literal(
+                                    "§7Duration: ~" + minutesLeft + " min"));
+                        }
+
+                        // Info
+                        if (percent > 0) {
+                            event.getToolTip().add(net.minecraft.network.chat.Component.literal("§9In Light: +Buffs"));
+                        } else {
+                            event.getToolTip().add(net.minecraft.network.chat.Component.literal("§8Outside: Uses Lux"));
+                        }
+                    });
+        }
+
+        private static boolean isReceptiveItem(net.minecraft.world.item.ItemStack stack) {
+            // Check if item has tag 'nexuscore:lux_receptive'
+            // Note: Tags is correct way.
+            return stack.is(net.minecraft.tags.ItemTags
+                    .create(new net.minecraft.resources.ResourceLocation(MODID, "lux_receptive")));
         }
     }
 
