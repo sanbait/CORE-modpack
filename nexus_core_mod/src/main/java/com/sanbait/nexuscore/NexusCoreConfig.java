@@ -17,6 +17,10 @@ public class NexusCoreConfig {
 
         // Lux System
         public static final ForgeConfigSpec.ConfigValue<java.util.List<? extends String>> ITEM_LUX_CAPACITIES;
+        public static final ForgeConfigSpec.ConfigValue<java.util.List<? extends String>> ITEM_LUX_COSTS;
+        public static final ForgeConfigSpec.IntValue DEFAULT_BLOCK_BREAK_COST;
+        public static final ForgeConfigSpec.IntValue DEFAULT_ATTACK_COST;
+        public static final ForgeConfigSpec.BooleanValue ALLOW_USE_WITHOUT_LUX;
         public static final ForgeConfigSpec.IntValue CORE_LUX_GENERATION_PER_LEVEL;
         public static final ForgeConfigSpec.IntValue CORE_LUX_CAPACITY_PER_LEVEL;
 
@@ -90,6 +94,36 @@ public class NexusCoreConfig {
                                                 "minecraft:golden_pickaxe|1000",
                                                 "minecraft:diamond_pickaxe|2000",
                                                 "minecraft:netherite_pickaxe|5000"), entry -> entry instanceof String);
+
+                ITEM_LUX_COSTS = BUILDER.comment("Define specific Lux costs per use for items.",
+                                "Format: 'modid:item_id|cost'",
+                                "Default cost if not listed here is defined by DEFAULT_BLOCK_BREAK_COST or DEFAULT_ATTACK_COST.")
+                                .defineList("itemLuxCosts", java.util.Arrays.asList(
+                                                "minecraft:wooden_sword|1",
+                                                "minecraft:stone_sword|2",
+                                                "minecraft:iron_sword|3",
+                                                "minecraft:golden_sword|5",
+                                                "minecraft:diamond_sword|5",
+                                                "minecraft:netherite_sword|10",
+
+                                                "minecraft:wooden_pickaxe|1",
+                                                "minecraft:stone_pickaxe|2",
+                                                "minecraft:iron_pickaxe|3",
+                                                "minecraft:golden_pickaxe|5",
+                                                "minecraft:diamond_pickaxe|5",
+                                                "minecraft:netherite_pickaxe|10"), entry -> entry instanceof String);
+
+                DEFAULT_BLOCK_BREAK_COST = BUILDER
+                                .comment("Default Lux cost for breaking blocks (if item not in itemLuxCosts list).")
+                                .defineInRange("defaultBlockBreakCost", 5, 0, 1000);
+
+                DEFAULT_ATTACK_COST = BUILDER
+                                .comment("Default Lux cost for attacking entities (if item not in itemLuxCosts list).")
+                                .defineInRange("defaultAttackCost", 5, 0, 1000);
+
+                ALLOW_USE_WITHOUT_LUX = BUILDER.comment(
+                                "Allow using tools/weapons without Lux (true = works without Lux, false = requires Lux).")
+                                .define("allowUseWithoutLux", true);
 
                 CORE_LUX_GENERATION_PER_LEVEL = BUILDER.comment("Lux generated per tick per level.")
                                 .defineInRange("coreLuxGenerationPerLevel", 1, 0, 1000);

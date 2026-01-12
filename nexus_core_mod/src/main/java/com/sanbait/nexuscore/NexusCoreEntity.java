@@ -21,7 +21,7 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class NexusCoreEntity extends PathfinderMob
-        implements GeoEntity, com.sanbait.luxsystem.capabilities.ILuxStorage {
+        implements GeoEntity, com.sanbait.luxsystem.capabilities.ILuxStorage, net.minecraft.world.MenuProvider {
     private static final EntityDataAccessor<Integer> CURRENT_LEVEL = SynchedEntityData.defineId(NexusCoreEntity.class,
             EntityDataSerializers.INT);
     // NEW: Sync Current Lux to Client for Rendering
@@ -29,11 +29,25 @@ public class NexusCoreEntity extends PathfinderMob
             EntityDataSerializers.INT);
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+    private final net.minecraftforge.items.ItemStackHandler upgradeInventory = new net.minecraftforge.items.ItemStackHandler(
+            1);
 
     public NexusCoreEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
+        this.noCulling = true; // Disable culling standard way
         this.noCulling = true;
         this.setNoAi(true); // Disable AI for the Core itself to save performance
+        this.setPersistenceRequired(); // Mark as persistent so it doesn't despawn
+    }
+
+    @Override
+    public boolean removeWhenFarAway(double distanceToClosestPlayer) {
+        return false; // Never despawn due to distance
+    }
+
+    @Override
+    public void checkDespawn() {
+        // Do nothing. Prevent vanilla despawn logic.
     }
 
     @Override
@@ -137,6 +151,7 @@ public class NexusCoreEntity extends PathfinderMob
             if (this.tickCount % 5 == 0) {
                 applyBuffs();
                 chargeNearbyItems();
+                checkUpgrade(); // Check for auto-upgrade items
             }
 
             // Server Side Light Manager - Removed periodic tick as per user request (State
@@ -177,30 +192,75 @@ public class NexusCoreEntity extends PathfinderMob
         }
     }
 
-    // Helper for HUD and Interaction
-    public static String getNextUpgradeCost(int currentLvl) {
+    // Helper to get just the AMOUNT needed for upgrade
+    public static int getUpgradeCostAmount(int currentLvl) {
         java.util.List<? extends String> costs = NexusCoreConfig.UPGRADE_COSTS.get();
         if (costs.isEmpty())
-            return "Unknown";
+            return 999;
 
         int costIndex = Math.min(currentLvl - 1, costs.size() - 1);
         String costStr = costs.get(costIndex);
         String[] parts = costStr.split("\\|");
         if (parts.length != 2)
-            return "Error";
+            return 999;
 
+        try {
+            return Integer.parseInt(parts[1]);
+        } catch (Exception e) {
+            return 999;
+        }
+    }
+
+    // Helper to get just the ITEM needed for upgrade
+    public static net.minecraft.world.item.Item getUpgradeCostItem(int currentLvl) {
+        java.util.List<? extends String> costs = NexusCoreConfig.UPGRADE_COSTS.get();
+        if (costs.isEmpty())
+            return net.minecraft.world.item.Items.AIR;
+
+        int costIndex = Math.min(currentLvl - 1, costs.size() - 1);
+        String costStr = costs.get(costIndex);
+        String[] parts = costStr.split("\\|");
         net.minecraft.resources.ResourceLocation loc = new net.minecraft.resources.ResourceLocation(parts[0]);
         net.minecraft.world.item.Item item = net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(loc);
-        int amount = 1;
-        try {
-            amount = Integer.parseInt(parts[1]);
-        } catch (Exception e) {
-        }
+        return item != null ? item : net.minecraft.world.item.Items.AIR;
+    }
 
-        if (item == null)
-            return "Invalid Item";
-
+    public static String getNextUpgradeCost(int currentLvl) {
+        net.minecraft.world.item.Item item = getUpgradeCostItem(currentLvl);
+        int amount = getUpgradeCostAmount(currentLvl);
+        if (item == null || item == net.minecraft.world.item.Items.AIR)
+            return "Max Level / Error";
         return amount + "x " + item.getDescription().getString();
+    }
+
+    private void checkUpgrade() {
+        if (this.level().isClientSide)
+            return;
+
+        int currentLvl = this.getCurrentLevel();
+        if (currentLvl >= 10)
+            return;
+
+        net.minecraft.world.item.Item requiredItem = getUpgradeCostItem(currentLvl);
+        int requiredAmount = getUpgradeCostAmount(currentLvl);
+
+        net.minecraft.world.item.ItemStack inputStack = this.upgradeInventory.getStackInSlot(0);
+
+        if (!inputStack.isEmpty() && inputStack.is(requiredItem) && inputStack.getCount() >= requiredAmount) {
+            // Visualize upgrade
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                    net.minecraft.sounds.SoundEvents.PLAYER_LEVELUP, net.minecraft.sounds.SoundSource.BLOCKS, 1.0F,
+                    1.0F);
+            // Spawn particles
+            if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, this.getX(),
+                        this.getY() + 1.5, this.getZ(), 20, 0.5, 0.5, 0.5, 0.1);
+            }
+
+            // Actually consume item
+            inputStack.shrink(requiredAmount);
+            this.upgrade();
+        }
     }
 
     private void chargeNearbyItems() {
@@ -233,7 +293,6 @@ public class NexusCoreEntity extends PathfinderMob
             int current = cap.getLuxStored();
             if (current < max) {
                 // Determine transfer rate (e.g. up to 10 per tick per item)
-                // Determine transfer rate (e.g. up to 10 per tick per item)
                 // Runs every 5 ticks (0.25 sec).
                 // 20 Lux per pulse => 80 Lux/sec
                 int transfer = 20;
@@ -249,7 +308,16 @@ public class NexusCoreEntity extends PathfinderMob
 
                     // SYNC FIX: Mirror to NBT to force Client Sync
                     // Changing NBT makes the ItemStack "dirty", triggering a packet.
-                    stack.getOrCreateTag().putInt("LuxStored", cap.getLuxStored());
+                    CompoundTag tag = stack.getOrCreateTag();
+                    tag.putInt("LuxStored", cap.getLuxStored());
+                    tag.putInt("LuxMax", max); // Sync Max as well for optimized rendering
+                }
+            } else {
+                // Even if full, sync if tag is missing (e.g. freshly crafted or spawned item)
+                if (!stack.hasTag() || !stack.getTag().contains("LuxMax")) {
+                    CompoundTag tag = stack.getOrCreateTag();
+                    tag.putInt("LuxStored", current);
+                    tag.putInt("LuxMax", max);
                 }
             }
         });
@@ -329,7 +397,21 @@ public class NexusCoreEntity extends PathfinderMob
     }
 
     @Override
+    public boolean canBeAffected(net.minecraft.world.effect.MobEffectInstance pEffect) {
+        if (pEffect.getEffect() == net.minecraft.world.effect.MobEffects.INVISIBILITY) {
+            return false;
+        }
+        return super.canBeAffected(pEffect);
+    }
+
+    @Override
     public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount) {
+        if (source.getEntity() instanceof net.minecraft.world.entity.player.Player player && player.isCreative()) {
+            this.setHealth(0);
+            this.die(source);
+            return true;
+        }
+
         if (!this.level().isClientSide) {
             // Visuals: Bleed particles (Redstone dust look-alike or purely red particles)
             if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
@@ -346,8 +428,9 @@ public class NexusCoreEntity extends PathfinderMob
 
     @Override
     public boolean isInvulnerableTo(net.minecraft.world.damagesource.DamageSource source) {
-        if (source.getEntity() instanceof net.minecraft.world.entity.player.Player) {
-            return true;
+        if (source.getEntity() instanceof net.minecraft.world.entity.player.Player player) {
+            // Allow Creative players to break it
+            return !player.isCreative();
         }
         if (source.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION)) {
             return true;
@@ -399,6 +482,26 @@ public class NexusCoreEntity extends PathfinderMob
     }
 
     @Override
+    public boolean shouldRenderAtSqrDistance(double distance) {
+        // Always render, no matter the distance.
+        // The beacon beam needs to be visible from across the map.
+        return true;
+    }
+
+    /**
+     * Fixes "disappearing" when looking away.
+     * Returns a LARGE but FINITE bounding box (64 blocks radius).
+     * Infinite AABB can cause issues with Sodium/Embeddium culling calculations.
+     */
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        // Return a very large finite bounding box. Infinite values can cause issues
+        // with culling mods.
+        return new net.minecraft.world.phys.AABB(
+                this.getX() - 30000, this.getY() - 30000, this.getZ() - 30000,
+                this.getX() + 30000, this.getY() + 30000, this.getZ() + 30000);
+    }
+
+    @Override
     public boolean isPickable() {
         return true;
     }
@@ -429,98 +532,33 @@ public class NexusCoreEntity extends PathfinderMob
     protected net.minecraft.world.InteractionResult mobInteract(net.minecraft.world.entity.player.Player player,
             net.minecraft.world.InteractionHand hand) {
         if (!this.level().isClientSide && hand == net.minecraft.world.InteractionHand.MAIN_HAND) {
-            net.minecraft.world.item.ItemStack stack = player.getItemInHand(hand);
-            int lvl = this.getCurrentLevel();
-
-            // Get requirement for *next* level (or same level for healing?).
-            // Logic: To heal/upgrade Level X core, we often use Level X resource (or X->X+1
-            // resource).
-            // Let's use the resource defined for "Current Level -> Next Level".
-            // If Max level, we use the last defined resource (index 9).
-
-            java.util.List<? extends String> costs = NexusCoreConfig.UPGRADE_COSTS.get();
-            int costIndex = Math.min(lvl - 1, costs.size() - 1); // Level 1 uses index 0 (Copper)
-
-            // Safety check for empty config
-            if (costs.isEmpty())
-                return super.mobInteract(player, hand);
-
-            String costStr = costs.get(costIndex);
-            // Parse "modid:item|amount"
-            String[] parts = costStr.split("\\|");
-            if (parts.length != 2)
-                return super.mobInteract(player, hand);
-
-            net.minecraft.resources.ResourceLocation loc = new net.minecraft.resources.ResourceLocation(parts[0]);
-            net.minecraft.world.item.Item neededItem = net.minecraftforge.registries.ForgeRegistries.ITEMS
-                    .getValue(loc);
-            int amountNeeded = 1;
-            try {
-                amountNeeded = Integer.parseInt(parts[1]);
-            } catch (NumberFormatException ignored) {
-            }
-
-            if (neededItem == null || neededItem == net.minecraft.world.item.Items.AIR) {
-                // Invalid config fallback
-                return super.mobInteract(player, hand);
-            }
-
-            // CHECK: Is player holding the item?
-            if (stack.getItem() == neededItem) {
-
-                // HEALING LOGIC: If HP < MaxHP, heal instead of upgrade
-                if (this.getHealth() < this.getMaxHealth()) {
-                    float healAmount = 20.0f;
-                    float missing = this.getMaxHealth() - this.getHealth();
-                    if (healAmount > missing)
-                        healAmount = missing; // Cap exactly to Max
-
-                    stack.shrink(1);
-                    this.heal(healAmount);
-                    this.playSound(net.minecraft.sounds.SoundEvents.IRON_GOLEM_REPAIR, 1.0F, 1.0F);
-                    if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-                        serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.HEART, this.getX(),
-                                this.getY() + 1.0, this.getZ(), 5, 0.5, 0.5, 0.5, 0.1);
-                    }
-                    // side like this, need
-                    // casting
-                    // Just play sound. Particles for healing happen automatically often.
-                    return net.minecraft.world.InteractionResult.SUCCESS;
-                }
-
-                // UPGRADE LOGIC: Only if Full HP
-                // Check if user has enough amount
-                if (stack.getCount() >= amountNeeded) {
-                    if (lvl < 10) {
-                        stack.shrink(amountNeeded);
-                        this.upgrade();
-                        player.displayClientMessage(
-                                net.minecraft.network.chat.Component.translatable("text.nexuscore.upgrade_success",
-                                        (lvl + 1)),
-                                true);
-                        return net.minecraft.world.InteractionResult.SUCCESS;
-                    } else {
-                        player.displayClientMessage(
-                                net.minecraft.network.chat.Component.translatable("message.nexuscore.max_level"), true);
-                        return net.minecraft.world.InteractionResult.SUCCESS;
-                    }
-                } else {
-                    // Not enough items
-                    player.displayClientMessage(net.minecraft.network.chat.Component
-                            .translatable("text.nexuscore.upgrade_fail",
-                                    amountNeeded + "x " + neededItem.getDescription().getString()),
-                            true);
-                    return net.minecraft.world.InteractionResult.FAIL;
-                }
-            } else if (!stack.isEmpty() && !(stack.getItem() instanceof net.minecraft.world.item.SwordItem)) {
-                // Hint wrong item
-                player.displayClientMessage(net.minecraft.network.chat.Component
-                        .translatable("text.nexuscore.upgrade_fail",
-                                amountNeeded + "x " + neededItem.getDescription().getString()),
-                        true);
-            }
+            // Open GUI - Use NetworkHooks to open screen on server side
+            net.minecraft.server.level.ServerPlayer serverPlayer = (net.minecraft.server.level.ServerPlayer) player;
+            net.minecraftforge.network.NetworkHooks.openScreen(serverPlayer, this, buf -> buf.writeInt(this.getId()));
+            return net.minecraft.world.InteractionResult.SUCCESS;
         }
-        return super.mobInteract(player, hand);
+        return net.minecraft.world.InteractionResult.CONSUME;
+    }
+
+    public int getRadius() {
+        return (int) (this.getCurrentLevel() * NexusCoreConfig.RADIUS_PER_LEVEL.get());
+    }
+
+    // MenuProvider implementation
+    @Override
+    public net.minecraft.network.chat.Component getDisplayName() {
+        return net.minecraft.network.chat.Component.translatable("container.nexuscore.core");
+    }
+
+    @Override
+    public net.minecraft.world.inventory.AbstractContainerMenu createMenu(int containerId,
+            net.minecraft.world.entity.player.Inventory playerInventory,
+            net.minecraft.world.entity.player.Player player) {
+        return new com.sanbait.nexuscore.gui.NexusCoreMenu(containerId, playerInventory, this);
+    }
+
+    public net.minecraftforge.items.ItemStackHandler getUpgradeInventory() {
+        return this.upgradeInventory;
     }
 
     @Override

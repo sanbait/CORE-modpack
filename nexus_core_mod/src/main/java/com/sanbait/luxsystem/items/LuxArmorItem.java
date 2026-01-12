@@ -47,16 +47,20 @@ public class LuxArmorItem extends ArmorItem implements ILuxStorage {
             // Effects
             stack.getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP).ifPresent(cap -> {
                 int lux = cap.getLuxStored();
+                int max = cap.getMaxLuxStored(); // Use dynamic max from capability (config-aware)
                 if (lux > 0) {
                     // Consume lux slowly (every 100 ticks = 5 seconds)
                     if (level.getGameTime() % 100 == 0) {
                         cap.extractLux(1, false);
+                        // Sync handled by capability or external tracker?
+                        // We should probably sync if we change it.
+                        stack.getOrCreateTag().putInt("LuxStored", cap.getLuxStored());
                     }
 
                     switch (this.type) {
                         case HELMET:
                             // Night Vision if > 50% charge
-                            if (lux > capacity / 2) {
+                            if (lux > max / 2) {
                                 player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 220, 0, true, false));
                             }
                             break;
@@ -112,6 +116,35 @@ public class LuxArmorItem extends ArmorItem implements ILuxStorage {
     @Override
     public int extractLux(int maxExtract, boolean simulate) {
         return 0;
+    }
+
+    @Override
+    public boolean isBarVisible(ItemStack stack) {
+        return getLux(stack) > 0;
+    }
+
+    @Override
+    public int getBarWidth(ItemStack stack) {
+        // Armor might need capability lookup as 'capacity' field is final
+        // But we have getMaxLuxStored stub now? Actually LuxArmorItem has
+        // getMaxLuxStored overridden to return `capacity`
+        // But better to use capability if possible for consistency
+        int max = 1000;
+        var cap = stack.getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP);
+        if (cap.isPresent()) {
+            max = cap.resolve().get().getMaxLuxStored();
+        } else {
+            max = capacity;
+        }
+
+        if (max <= 0)
+            return 0;
+        return Math.round(13.0F * (float) getLux(stack) / max);
+    }
+
+    @Override
+    public int getBarColor(ItemStack stack) {
+        return 0xFFFF00; // Yellow/Gold
     }
 
     @Override

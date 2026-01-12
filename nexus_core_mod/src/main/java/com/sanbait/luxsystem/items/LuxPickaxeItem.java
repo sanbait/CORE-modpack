@@ -55,10 +55,9 @@ public class LuxPickaxeItem extends PickaxeItem implements ILuxStorage {
 
     @Override
     public boolean mineBlock(ItemStack stack, Level level, BlockState state, BlockPos pos, LivingEntity entity) {
-        // Consume Lux via Capability
-        stack.getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP).ifPresent(cap -> {
-            cap.extractLux(1, false);
-        });
+        // Lux consumption is now handled by NexusCore.onBlockBreak event to respect
+        // Config
+        // We do NOT consume here to avoid double-charging.
         return super.mineBlock(stack, level, state, pos, entity);
     }
 
@@ -83,7 +82,11 @@ public class LuxPickaxeItem extends PickaxeItem implements ILuxStorage {
                     .withStyle(ChatFormatting.BLUE));
             tooltip.add(Component.literal(" "));
 
-            // Lux Bar is handled globally now
+            // Lux Charge
+            int currentLux = getLux(stack);
+            int maxLux = getMaxLuxStored(stack); // Use stack-aware method
+            tooltip.add(Component.literal("Lux: " + currentLux + " / " + maxLux)
+                    .withStyle(ChatFormatting.AQUA));
         } else {
             tooltip.add(Component.translatable("tooltip.nexuscore.hold_shift")
                     .withStyle(ChatFormatting.GRAY));
@@ -98,6 +101,13 @@ public class LuxPickaxeItem extends PickaxeItem implements ILuxStorage {
     public void inventoryTick(ItemStack stack, Level level, net.minecraft.world.entity.Entity entity, int slotId,
             boolean isSelected) {
         // No-op
+    }
+
+    // Helper for max lux from stack capability
+    public int getMaxLuxStored(ItemStack stack) {
+        return stack.getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP)
+                .map(com.sanbait.luxsystem.capabilities.ILuxStorage::getMaxLuxStored)
+                .orElse(capacity);
     }
 
     // ILuxStorage implementation
@@ -119,6 +129,24 @@ public class LuxPickaxeItem extends PickaxeItem implements ILuxStorage {
     @Override
     public int extractLux(int maxExtract, boolean simulate) {
         return 0;
+    }
+
+    @Override
+    public boolean isBarVisible(ItemStack stack) {
+        return getLux(stack) > 0;
+    }
+
+    @Override
+    public int getBarWidth(ItemStack stack) {
+        int max = getMaxLuxStored(stack);
+        if (max <= 0)
+            return 0;
+        return Math.round(13.0F * (float) getLux(stack) / max);
+    }
+
+    @Override
+    public int getBarColor(ItemStack stack) {
+        return 0xFFFF00; // Yellow/Gold color for Lux
     }
 
     @Override

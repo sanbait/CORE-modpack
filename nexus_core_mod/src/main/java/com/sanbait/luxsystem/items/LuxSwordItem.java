@@ -40,17 +40,17 @@ public class LuxSwordItem extends SwordItem implements ILuxStorage {
 
     @Override
     public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+        // Lux consumption is now handled by NexusCore.onLivingHurt event to respect
+        // Config
+        // We just check if we have enough Lux to apply the effect
         stack.getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP).ifPresent(cap -> {
-            int lux = cap.getLuxStored();
-            if (lux > 0) {
-                // Always consume Lux, even if less than 5
-                int consumed = Math.min(lux, 5);
-                cap.extractLux(consumed, false);
-
-                // Only apply effect if we had enough (5+)
-                if (consumed >= 5) {
-                    target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 40, 1));
-                }
+            // Apply effect if we have Lux (or had it before the event consumed it?)
+            // Since Event runs before this, if we have > 0 now, we definitely had enough.
+            // If we have 0 now, we might have just used the last bit.
+            // For simplicity, let's just checking if the capability exists.
+            // Actually, let's just apply blindness with a chance or if Lux > 0.
+            if (cap.getLuxStored() > 0) {
+                target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 40, 1));
             }
         });
         return super.hurtEnemy(stack, target, attacker);
@@ -77,7 +77,8 @@ public class LuxSwordItem extends SwordItem implements ILuxStorage {
 
             // Lux Charge
             int currentLux = getLux(stack);
-            tooltip.add(Component.literal("Lux: " + currentLux + " / " + capacity)
+            int maxLux = getMaxLuxStored(stack); // Use stack-aware method
+            tooltip.add(Component.literal("Lux: " + currentLux + " / " + maxLux)
                     .withStyle(ChatFormatting.AQUA));
         } else {
             // Generic 'Hold Shift' message
@@ -86,6 +87,13 @@ public class LuxSwordItem extends SwordItem implements ILuxStorage {
         }
 
         super.appendHoverText(stack, level, tooltip, flag);
+    }
+
+    // Helper for max lux from stack capability
+    public int getMaxLuxStored(ItemStack stack) {
+        return stack.getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP)
+                .map(com.sanbait.luxsystem.capabilities.ILuxStorage::getMaxLuxStored)
+                .orElse(capacity);
     }
 
     // Stub implementations
@@ -107,6 +115,24 @@ public class LuxSwordItem extends SwordItem implements ILuxStorage {
     @Override
     public int extractLux(int maxExtract, boolean simulate) {
         return 0;
+    }
+
+    @Override
+    public boolean isBarVisible(ItemStack stack) {
+        return getLux(stack) > 0;
+    }
+
+    @Override
+    public int getBarWidth(ItemStack stack) {
+        int max = getMaxLuxStored(stack);
+        if (max <= 0)
+            return 0;
+        return Math.round(13.0F * (float) getLux(stack) / max);
+    }
+
+    @Override
+    public int getBarColor(ItemStack stack) {
+        return 0xFFFF00; // Yellow/Gold
     }
 
     @Override

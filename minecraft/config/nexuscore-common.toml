@@ -32,4 +32,16 @@
 		#Maximum Lux stored per level.
 		#Range: 100 ~ 100000
 		coreLuxCapacityPerLevel = 1000
+		#Define specific Lux costs per use for items.
+		#Format: 'modid:item_id|cost'
+		#Default cost if not listed here is defined by DEFAULT_BLOCK_BREAK_COST or DEFAULT_ATTACK_COST.
+		itemLuxCosts = ["minecraft:wooden_sword|1", "minecraft:stone_sword|2", "minecraft:iron_sword|3", "minecraft:golden_sword|5", "minecraft:diamond_sword|5", "minecraft:netherite_sword|10", "minecraft:wooden_pickaxe|1", "minecraft:stone_pickaxe|2", "minecraft:iron_pickaxe|3", "minecraft:golden_pickaxe|5", "minecraft:diamond_pickaxe|5", "minecraft:netherite_pickaxe|10"]
+		#Default Lux cost for breaking blocks (if item not in itemLuxCosts list).
+		#Range: 0 ~ 1000
+		defaultBlockBreakCost = 5
+		#Default Lux cost for attacking entities (if item not in itemLuxCosts list).
+		#Range: 0 ~ 1000
+		defaultAttackCost = 5
+		#Allow using tools/weapons without Lux (true = works without Lux, false = requires Lux).
+		allowUseWithoutLux = true
 

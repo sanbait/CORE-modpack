@@ -122,6 +122,8 @@ Located in `config/luxsystem-common.toml`.
 ## 🛠 Troubleshooting & Debug
 
 * **Particles:** If FPS is low, Core particles are culled after 64 blocks distance.
+* **Missing Mobs/Entities:** If mobs disappear at close range, check your `EntityCulling` mod settings or `Embeddium` Entity Distance. This mod respects global rendering settings.
+* **Core Disappearing:** The Nexus Core has a forced render distance of 512 blocks. If it disappears, ensure `nexuscore:core` is whitelisted in `entityculling.json` (done automatically in v1.1.20).
 * **Invisible Golem:** This version uses `GeckoLib` rendering. If the Core is invisible, ensure you have the GeckoLib mod installed.
 * **Commands:**
   * `/lux set <amount>` (if enabled in dev) - Set Lux amount of held item.

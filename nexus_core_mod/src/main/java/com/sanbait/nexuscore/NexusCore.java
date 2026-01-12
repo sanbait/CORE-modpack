@@ -28,6 +28,8 @@ public class NexusCore {
     public static final RegistryObject<EntityType<NexusCoreEntity>> NEXUS_CORE = ENTITIES.register("core",
             () -> EntityType.Builder.of(NexusCoreEntity::new, MobCategory.MISC)
                     .sized(1.5f, 3.0f) // Sized for a large crystal/core
+                    .clientTrackingRange(256) // Fix disappearing range (Max chunks)
+                    .updateInterval(20) // Update every second (less spam)
                     .build("core"));
 
     public static final DeferredRegister<net.minecraft.world.item.Item> ITEMS = DeferredRegister
@@ -98,6 +100,21 @@ public class NexusCore {
                         output.accept(CORE_KEY.get());
                     }).build());
 
+    // Menu Types
+    public static final DeferredRegister<net.minecraft.world.inventory.MenuType<?>> MENU_TYPES = DeferredRegister
+            .create(ForgeRegistries.MENU_TYPES, MODID);
+
+    public static final RegistryObject<net.minecraft.world.inventory.MenuType<com.sanbait.nexuscore.gui.NexusCoreMenu>> CORE_MENU = MENU_TYPES
+            .register("core_menu", () -> net.minecraftforge.common.extensions.IForgeMenuType.create(
+                    (windowId, inv, data) -> {
+                        int entityId = data.readInt();
+                        net.minecraft.world.entity.Entity entity = inv.player.level().getEntity(entityId);
+                        if (entity instanceof NexusCoreEntity core) {
+                            return new com.sanbait.nexuscore.gui.NexusCoreMenu(windowId, inv, core);
+                        }
+                        return null;
+                    }));
+
     public NexusCore() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
@@ -110,6 +127,7 @@ public class NexusCore {
         ENTITIES.register(modEventBus);
         ITEMS.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
+        MENU_TYPES.register(modEventBus);
 
         // Register event handlers
         modEventBus.addListener(this::commonSetup);
@@ -134,6 +152,12 @@ public class NexusCore {
 
     private void clientSetup(final FMLClientSetupEvent event) {
         EntityRenderers.register(NEXUS_CORE.get(), NexusCoreRenderer::new);
+
+        // Register Screens - using enqueueWork for thread safety
+        event.enqueueWork(() -> {
+            net.minecraft.client.gui.screens.MenuScreens.register(CORE_MENU.get(),
+                    com.sanbait.nexuscore.gui.NexusCoreScreen::new);
+        });
     }
 
     @net.minecraftforge.fml.common.Mod.EventBusSubscriber(modid = MODID, bus = net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus.FORGE)
@@ -241,6 +265,94 @@ public class NexusCore {
             com.sanbait.nexuscore.util.ServerLightManager.onEquipmentChange(event);
         }
 
+        // --- CONSUMPTION LOGIC ---
+
+        // --- CONSUMPTION LOGIC ---
+
+        private static int getCostFromConfig(net.minecraft.world.item.ItemStack stack) {
+            java.util.List<? extends String> configs = NexusCoreConfig.ITEM_LUX_COSTS.get();
+            net.minecraft.resources.ResourceLocation id = net.minecraftforge.registries.ForgeRegistries.ITEMS
+                    .getKey(stack.getItem());
+            if (id != null) {
+                String key = id.toString();
+                for (String entry : configs) {
+                    String[] parts = entry.split("\\|");
+                    if (parts.length == 2 && parts[0].equals(key)) {
+                        try {
+                            return Integer.parseInt(parts[1]);
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                }
+            }
+            // Fallbacks
+            if (stack.getItem() instanceof net.minecraft.world.item.SwordItem) {
+                return NexusCoreConfig.DEFAULT_ATTACK_COST.get();
+            }
+            return NexusCoreConfig.DEFAULT_BLOCK_BREAK_COST.get();
+        }
+
+        private static boolean shouldSkipConsumption(net.minecraft.world.item.ItemStack stack) {
+            // Check if usages is allowed without lux
+            return NexusCoreConfig.ALLOW_USE_WITHOUT_LUX.get();
+        }
+
+        @net.minecraftforge.eventbus.api.SubscribeEvent
+        public static void onBlockBreak(net.minecraftforge.event.level.BlockEvent.BreakEvent event) {
+            net.minecraft.world.entity.player.Player player = event.getPlayer();
+            if (player != null && !player.level().isClientSide) {
+                net.minecraft.world.item.ItemStack stack = player.getMainHandItem();
+                stack.getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP).ifPresent(cap -> {
+                    int cost = getCostFromConfig(stack);
+                    if (cap.getLuxStored() >= cost) {
+                        cap.extractLux(cost, false);
+                        // Sync
+                        stack.getOrCreateTag().putInt("LuxStored", cap.getLuxStored());
+                    } else if (!NexusCoreConfig.ALLOW_USE_WITHOUT_LUX.get()) {
+                        // Prevent break if not allowed
+                        event.setCanceled(true);
+                        player.displayClientMessage(
+                                net.minecraft.network.chat.Component.translatable("message.nexuscore.no_lux"), true);
+                    }
+                });
+            }
+        }
+
+        @net.minecraftforge.eventbus.api.SubscribeEvent
+        public static void onLivingHurt(net.minecraftforge.event.entity.living.LivingHurtEvent event) {
+            if (event.getSource().getEntity() instanceof net.minecraft.world.entity.player.Player player
+                    && !player.level().isClientSide) {
+                net.minecraft.world.item.ItemStack stack = player.getMainHandItem();
+                stack.getCapability(com.sanbait.luxsystem.capabilities.LuxProvider.LUX_CAP).ifPresent(cap -> {
+                    int cost = getCostFromConfig(stack);
+                    // For weapons, we use Attack Cost default if mapped
+                    if (stack.getItem() instanceof net.minecraft.world.item.SwordItem) {
+                        // Recalculate cost if generic fallback was used incorrectly?
+                        // No, getCostFromConfig handles type check.
+                    } else {
+                        // If not a sword/tool, maybe we shouldn't consume?
+                        // But we want to support any item with Lux cap.
+                        // Let's rely on config.
+                    }
+
+                    if (cap.getLuxStored() >= cost) {
+                        cap.extractLux(cost, false);
+                        // Sync
+                        stack.getOrCreateTag().putInt("LuxStored", cap.getLuxStored());
+                    } else if (!NexusCoreConfig.ALLOW_USE_WITHOUT_LUX.get()) {
+                        // Reduce damage if no lux
+                        event.setAmount(event.getAmount() * 0.5f);
+                        // Limit spam
+                        if (player.tickCount % 20 == 0) {
+                            player.displayClientMessage(
+                                    net.minecraft.network.chat.Component.translatable("message.nexuscore.low_lux"),
+                                    true);
+                        }
+                    }
+                });
+            }
+        }
+
         // Universal Lux Capability Attachment
         @net.minecraftforge.eventbus.api.SubscribeEvent
         public static void attachCapabilities(
@@ -257,7 +369,17 @@ public class NexusCore {
             // interface now, or we remove it.
             // Let's support the legacy hardcoded items checking too.
 
-            if (isLuxItem || isReceptiveItem(stack)) {
+            // Check vanilla tags for tools/weapons/armor
+            boolean isVanillaTool = stack.is(net.minecraft.tags.ItemTags.create(
+                    new net.minecraft.resources.ResourceLocation("minecraft", "tools")));
+            boolean isVanillaWeapon = stack.is(net.minecraft.tags.ItemTags.create(
+                    new net.minecraft.resources.ResourceLocation("minecraft", "swords"))) ||
+                    stack.getItem() instanceof net.minecraft.world.item.BowItem ||
+                    stack.getItem() instanceof net.minecraft.world.item.TridentItem ||
+                    stack.getItem() instanceof net.minecraft.world.item.CrossbowItem;
+            boolean isVanillaArmor = stack.getItem() instanceof net.minecraft.world.item.ArmorItem;
+
+            if (isLuxItem || isReceptiveItem(stack) || isVanillaTool || isVanillaWeapon || isVanillaArmor) {
                 com.sanbait.luxsystem.capabilities.LuxProvider provider = new com.sanbait.luxsystem.capabilities.LuxProvider();
 
                 // Determine Capacity
@@ -389,6 +511,18 @@ public class NexusCore {
         @net.minecraftforge.eventbus.api.SubscribeEvent
         public static void registerOverlays(net.minecraftforge.client.event.RegisterGuiOverlaysEvent event) {
             event.registerAboveAll("nexus_overlay", NexusCoreOverlay.INSTANCE);
+        }
+
+        @net.minecraftforge.eventbus.api.SubscribeEvent
+        public static void registerItemDecorators(net.minecraftforge.client.event.RegisterItemDecorationsEvent event) {
+            // Register decorator for ALL items - confirmed working
+            // DISABLED: Using Vanilla Bar system instead to fix lag issues.
+            /*
+             * for (net.minecraft.world.item.Item item :
+             * net.minecraftforge.registries.ForgeRegistries.ITEMS) {
+             * event.register(item, com.sanbait.nexuscore.client.LuxItemDecorator.INSTANCE);
+             * }
+             */
         }
     }
 

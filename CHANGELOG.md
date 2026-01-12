@@ -4,6 +4,20 @@ All notable changes to the Entropy Core project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.21] - 2026-01-12
+
+### Optimized
+
+- **Performance**: Removed `LuxItemDecorator` which was causing massive FPS drops due to expensive per-frame logic.
+- **Rendering**: Switched to **Vanilla Item Bars** (`isBarVisible`, `getBarColor`) for Lux display. Zero lag, native performance.
+- **Sync**: Enabled NBT mirroring for `LuxMax` to ensure client-side rendering is accurate without capability lookups.
+
+### Added
+
+- **Config**: Full configuration integration for Lux Consumption logic (Tools, Armor, Weapons).
+- **Logic**: Implemented `ALLOW_USE_WITHOUT_LUX` game rule.
+- **Docs**: Updated `CONFIG_GUIDE.md` and `CHANGELOG_CONFIG.md` with final details.
+
 ## [2026-01-11] - Session Update
 
 ### Added
@@ -31,3 +45,25 @@ All notable changes to the Entropy Core project will be documented in this file.
 - **Bug**: Fixed Lux Items (Pickaxe, Armor, Sword) not charging. Refactored from NBT to Capabilities to match Core logic.
 - **Visual**: Fixed "mojibake" (unicode squares) in Lux tooltips by replacing characters with ASCII bars.
 - **Balance**: Improved Lux charging frequency to 5 ticks (80 Lux/sec) for smoother visual feedback.
+
+## [1.1.19] - 2026-01-11
+
+### Added
+
+- **GUI**: Implemented custom GUI for Nexus Core (`NexusCoreScreen`, `NexusCoreMenu`) with stats and upgrade slot.
+- **Render**: Increased Core render distance to 512 blocks.
+
+### Changed
+
+- **Config**: Removed `ClothConfig` dependency to simplify build process.
+- **Visuals**: Added Lux Bar to GUI.
+
+## [1.1.20] - 2026-01-11
+
+### Fixed
+
+- **Critical Compilation Fix**: Resolved `RegisterMenuScreensEvent` symbol error by switching to `MenuScreens.register`.
+- **Render Distance**: Fixed visual disappearance of the Core using infinite bounding box and `noCulling` flag.
+- **Entity Culling Compatibility**: added `nexuscore:core` to `entityculling.json` whitelist.
+- **GUI**: Corrected coordinates for Upgrade Slot and Lux Bar.
+- **Functionality**: Restored `LuxItemDecorator` for all items.
