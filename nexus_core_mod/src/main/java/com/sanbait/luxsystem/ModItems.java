@@ -40,6 +40,15 @@ public class ModItems {
         public static final RegistryObject<Item> FOSSILIZED_LUX_AMBER = ITEMS.register("fossilized_lux_amber",
                         () -> new Item(new Item.Properties().rarity(Rarity.UNCOMMON)));
 
+        public static final RegistryObject<Item> LUX_FILTER = ITEMS.register("lux_filter",
+                        () -> new Item(new Item.Properties().rarity(Rarity.UNCOMMON)));
+
+        public static final RegistryObject<Item> LUX_CANISTER = ITEMS.register("lux_canister",
+                        () -> new Item(new Item.Properties().rarity(Rarity.COMMON).stacksTo(16)));
+
+        public static final RegistryObject<Item> LUX_CANISTER_FULL = ITEMS.register("lux_canister_full",
+                        () -> new Item(new Item.Properties().rarity(Rarity.UNCOMMON).stacksTo(1)));
+
         // Lux Tools & Armor
         public static final RegistryObject<Item> LUX_SWORD = ITEMS.register("lux_sword",
                         () -> new com.sanbait.luxsystem.items.LuxSwordItem(net.minecraft.world.item.Tiers.DIAMOND, 3,

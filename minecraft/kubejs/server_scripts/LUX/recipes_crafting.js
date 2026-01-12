@@ -1,7 +1,7 @@
 ServerEvents.recipes(event => {
     // 1. Lux Filter
     event.shaped(
-        Item.of('kubejs:lux_filter', 2),
+        Item.of('luxsystem:lux_filter', 2),
         [
             ' S ',
             'PGP',
@@ -16,7 +16,7 @@ ServerEvents.recipes(event => {
 
     // 2. Lux Canister (Empty)
     event.shaped(
-        'kubejs:lux_canister',
+        'luxsystem:lux_canister',
         [
             ' I ',
             'GBG',
@@ -40,7 +40,7 @@ ServerEvents.recipes(event => {
         {
             N: 'minecraft:iron_nugget',
             G: 'minecraft:glass',
-            C: 'kubejs:lux_canister_full'
+            C: 'luxsystem:lux_canister_full'
         }
     )
 })

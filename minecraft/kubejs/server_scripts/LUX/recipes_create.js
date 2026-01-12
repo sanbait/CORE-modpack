@@ -5,15 +5,15 @@ ServerEvents.recipes(event => {
         [
             'minecraft:glowstone_dust',
             Fluid.of('minecraft:water', 250),
-            'kubejs:lux_filter'
+            'luxsystem:lux_filter'
         ]
     ).heated()
 
     // 2. Spouting: Fill Canister
     event.recipes.create.filling(
-        'kubejs:lux_canister_full',
+        'luxsystem:lux_canister_full',
         [
-            'kubejs:lux_canister',
+            'luxsystem:lux_canister',
             Fluid.of('luxsystem:liquid_lux', 1000)
         ]
     )
@@ -21,9 +21,9 @@ ServerEvents.recipes(event => {
     // 3. Emptying: Drain Canister
     event.recipes.create.emptying(
         [
-            'kubejs:lux_canister',
+            'luxsystem:lux_canister',
             Fluid.of('luxsystem:liquid_lux', 1000)
         ],
-        'kubejs:lux_canister_full'
+        'luxsystem:lux_canister_full'
     )
 })

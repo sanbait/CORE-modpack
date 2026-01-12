@@ -45,6 +45,9 @@ public class LuxSystem {
             event.accept(ModItems.ANCIENT_LUX_ORB);
             event.accept(ModItems.LUX_CRYSTAL_FRAGMENT);
             event.accept(ModItems.FOSSILIZED_LUX_AMBER);
+            event.accept(ModItems.LUX_FILTER);
+            event.accept(ModItems.LUX_CANISTER);
+            event.accept(ModItems.LUX_CANISTER_FULL);
         }
     }
 }

@@ -385,8 +385,11 @@ public class NexusCoreEntity extends PathfinderMob
             // Spawn particles in a circle
             // OPTIMIZATION: Reduced from 10 per tick (200/sec) to 2 per tick (40/sec) to
             // save FPS.
-            for (int i = 0; i < 2; i++) {
+            // HEAVY OPTIMIZATION: Reduced drastically to prevent FPS drop.
+            // Only spawn 1 particle every 10 ticks per client.
+            if (this.tickCount % 10 == 0) {
                 double angle = this.random.nextDouble() * 2 * Math.PI;
+                // Use existing 'radius' variable calculated above
                 double x = this.getX() + radius * Math.cos(angle);
                 double z = this.getZ() + radius * Math.sin(angle);
                 double y = this.getY() + 0.5D;
@@ -494,11 +497,12 @@ public class NexusCoreEntity extends PathfinderMob
      * Infinite AABB can cause issues with Sodium/Embeddium culling calculations.
      */
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
-        // Return a very large finite bounding box. Infinite values can cause issues
-        // with culling mods.
-        return new net.minecraft.world.phys.AABB(
-                this.getX() - 30000, this.getY() - 30000, this.getZ() - 30000,
-                this.getX() + 30000, this.getY() + 30000, this.getZ() + 30000);
+        // Optimized Bounding Box: Finite but covers the beam height.
+        // Radius matches the core size approx, Height goes up to world limit for beacon
+        // beam.
+        // Prevents rendering engine from processing "Infinite" or "Massive" boxes
+        // unnecessarily.
+        return this.getBoundingBox().inflate(5.0, 512.0, 5.0);
     }
 
     @Override
