@@ -1,7 +1,9 @@
 # Nexus Core Mod - Official Documentation
 
-**Version:** 1.1.18 (Java Forge 1.20.1)  
+**Version:** 1.1.21+ (Java Forge 1.20.1)  
 **Dependencies:** GeckoLib 4.4.2+  
+
+**Last Updated:** January 2026
 
 ---
 
@@ -26,6 +28,19 @@ This mod is split into two logical modules:
 **Summon Command:** `/summon nexuscore:core`
 
 The Core is a living, growing crystal structure. It is anchored to its spawn position and cannot be moved by pistons or physics.
+
+### Visual Features
+
+* **Dynamic Growth:** The Core visually grows taller with each level (GeckoLib animated model)
+* **Color Progression:** The Core's color changes based on level:
+  * **Level 1-2:** Yellow/Gold (1.0, 0.9, 0.3)
+  * **Level 3-4:** Brighter Yellow (1.0, 0.95, 0.5)
+  * **Level 5-6:** Orange-Yellow (1.0, 0.85, 0.4)
+  * **Level 7-8:** Bright Gold (1.0, 1.0, 0.6)
+  * **Level 9-10:** Near-White/Bright (1.0, 1.0, 0.9)
+* **Beacon Beam:** A yellow/gold beam extends upward from the Core, matching the Core's level color
+* **Glow Particles:** Yellow/gold particles spawn around the Core, creating a luminous aura
+* **Custom Texture:** Uses `nexus_core.png` texture with crystalline appearance
 
 ### 1. Growth & Stats
 
@@ -66,7 +81,22 @@ The Core has **10 Levels**. As it levels up, it grows physically taller, creates
 
 **Lux** is the magical energy form acting as "Liquid Light".
 
-### 1. Generating & Charging
+### 1. Core Components
+
+The Lux System has been streamlined to focus on essential components:
+
+* **Liquid Lux** (`luxsystem:liquid_lux_source`): A fluid that can be:
+  * Poured into buckets (`luxsystem:liquid_lux_bucket`)
+  * Poured into other containers
+  * Consumed directly (drinkable)
+* **Lux Crystal** (`luxsystem:lux_crystal`): A crystalline form of Lux energy, used as fuel
+* **Lux Charger** (`luxsystem:lux_charger`): A charging station block with:
+  * **Fuel Slot:** Accepts Lux Crystals or Liquid Lux Buckets
+  * **Input Slot:** Items to be charged (must have Lux capability)
+  * **Output Slot:** Charged items
+  * **Charging Speed:** Configurable via `luxsystem-common.toml` (`chargerSpeed`, default: 50 ticks)
+
+### 2. Generating & Charging
 
 * **Source:** The Nexus Core passively generates Lux.
 * **Charging:** Every **1.0 Second** (20 ticks), the Core scans all players within its **Radius**.
@@ -74,7 +104,7 @@ The Core has **10 Levels**. As it levels up, it grows physically taller, creates
   * **Rate:** ~50 Lux per scan (burst).
   * *Note:* Items must have the `LuxCapability`. Vanilla swords/pickaxes are supported by default (configured in TOML).
 
-### 2. Supported Items (Default)
+### 3. Supported Items (Default)
 
 The mod automatically attaches Lux capacity to vanilla items:
 
@@ -82,6 +112,11 @@ The mod automatically attaches Lux capacity to vanilla items:
 * **Diamond Tier:** 2000 Lux
 * **Netherite Tier:** 5000 Lux
 * *Configurable in `nexuscore-common.toml`*
+
+### 4. Recipes
+
+* **Lux Charger:** Crafted with 8x Iron Ingot + 1x Lux Crystal (3x3 grid, crystal in center)
+* **Lux Charger Recipes:** Configured via KubeJS in `server_scripts/LUX/recipes_crafting.js`
 
 ---
 
@@ -113,9 +148,9 @@ Located in `config/nexuscore-common.toml`.
 
 Located in `config/luxsystem-common.toml`.
 
-* `extractorSpeed` / `condenserSpeed`: Operation time in ticks.
-* `tankCapacity`: Fluid limit (mB) for machines.
-* `manualInfusionDuration`: Time in ticks for Phantom Infusion crafting.
+* `chargerSpeed`: Charging speed for Lux Charger (default: 50 ticks, range: 1-1000)
+  * Lower values = faster charging
+  * Higher values = slower charging
 
 ---
 
@@ -130,5 +165,29 @@ Located in `config/luxsystem-common.toml`.
   * `/summon nexuscore:core` - Spawn a fresh Core.
 
 ---
+---
+
+## 📝 Recent Changes (v1.1.21+)
+
+### Lux System Cleanup
+* Removed test items and blocks (Lux tools, armor, canisters, filters, ancient items, extractor, condenser, recycler, core block)
+* Kept only essential components: Liquid Lux, Lux Crystal, Lux Charger
+* All removed items/blocks have been cleaned from registrations, localization, and JEI
+
+### Nexus Core Visual Improvements
+* Fixed visual growth - Core now properly displays different levels using GeckoLib bone visibility
+* Added dynamic color system - Core color changes based on level (yellow/gold progression)
+* Added yellow/gold beacon beam matching Core's level color
+* Added glow particles around the Core
+* Custom texture support (`nexus_core.png`)
+
+### Technical Improvements
+* Fixed Lux Charger GUI - now uses 3 specific slots (fuel, input, output) instead of 3x3 grid
+* Fixed Lux Charger charging speed - now gradual instead of instantaneous
+* Fixed fluid ID in KubeJS recipes (`liquid_lux_source` instead of `liquid_lux`)
+* Improved model update logic for GeckoLib entities
+
+---
+
 *Maintained by: Entropy Core Dev Team*
-*Last Update: Jan 2026*
+*Last Update: January 2026*

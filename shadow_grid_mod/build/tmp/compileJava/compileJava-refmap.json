@@ -1,0 +1,26 @@
+{
+  "mappings": {
+    "com/sanbait/shadowgrid/mixin/MixinLevelRenderer": {
+      "updateRenderChunks": "Lnet/minecraft/client/renderer/LevelRenderer;m_194362_(Ljava/util/LinkedHashSet;Lnet/minecraft/client/renderer/LevelRenderer$RenderInfoMap;Lnet/minecraft/world/phys/Vec3;Ljava/util/Queue;Z)V"
+    },
+    "com/sanbait/shadowgrid/mixin/MixinFrustum": {
+      "isVisible(Lnet/minecraft/world/phys/AABB;)Z": "Lnet/minecraft/client/renderer/culling/Frustum;m_113029_(Lnet/minecraft/world/phys/AABB;)Z"
+    },
+    "com/sanbait/shadowgrid/mixin/MixinRenderChunk": {
+      "getCompiledChunk()Lnet/minecraft/client/renderer/chunk/ChunkRenderDispatcher$CompiledChunk;": "Lnet/minecraft/client/renderer/chunk/ChunkRenderDispatcher$RenderChunk;m_112835_()Lnet/minecraft/client/renderer/chunk/ChunkRenderDispatcher$CompiledChunk;"
+    }
+  },
+  "data": {
+    "searge": {
+      "com/sanbait/shadowgrid/mixin/MixinLevelRenderer": {
+        "updateRenderChunks": "Lnet/minecraft/client/renderer/LevelRenderer;m_194362_(Ljava/util/LinkedHashSet;Lnet/minecraft/client/renderer/LevelRenderer$RenderInfoMap;Lnet/minecraft/world/phys/Vec3;Ljava/util/Queue;Z)V"
+      },
+      "com/sanbait/shadowgrid/mixin/MixinFrustum": {
+        "isVisible(Lnet/minecraft/world/phys/AABB;)Z": "Lnet/minecraft/client/renderer/culling/Frustum;m_113029_(Lnet/minecraft/world/phys/AABB;)Z"
+      },
+      "com/sanbait/shadowgrid/mixin/MixinRenderChunk": {
+        "getCompiledChunk()Lnet/minecraft/client/renderer/chunk/ChunkRenderDispatcher$CompiledChunk;": "Lnet/minecraft/client/renderer/chunk/ChunkRenderDispatcher$RenderChunk;m_112835_()Lnet/minecraft/client/renderer/chunk/ChunkRenderDispatcher$CompiledChunk;"
+      }
+    }
+  }
+}

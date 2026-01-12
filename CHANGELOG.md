@@ -18,6 +18,20 @@ All notable changes to the Entropy Core project will be documented in this file.
 - **Logic**: Implemented `ALLOW_USE_WITHOUT_LUX` game rule.
 - **Docs**: Updated `CONFIG_GUIDE.md` and `CHANGELOG_CONFIG.md` with final details.
 
+### Fixed
+
+- **FPS**: Fixed critical FPS drop caused by `DistExecutor` garbage generation in particle logic.
+- **KubeJS**: Fixed missing Item registrations (`lux_filter`, `lux_canister`) which caused script errors.
+- **Build**: Fixed `UPDATE_MOD.bat` to properly clean old JARs before building.
+- **Cleanup**: Removed redundant build scripts (including duplicate UPDATE_MOD.bat).
+
+### Fixed
+
+- **FPS**: Fixed critical FPS drop caused by `DistExecutor` garbage generation in particle logic.
+- **KubeJS**: Fixed missing Item registrations (`lux_filter`, `lux_canister`) which caused script errors.
+- **Build**: Fixed `UPDATE_MOD.bat` to properly clean old JARs before building.
+- **Cleanup**: Removed redundant build scripts from mod directory.
+
 ## [2026-01-11] - Session Update
 
 ### Added

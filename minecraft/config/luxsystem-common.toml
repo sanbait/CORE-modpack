@@ -23,3 +23,8 @@
 	#Range: 100 ~ 10000
 	canisterCapacity = 1000
 
+["Lux Charger Settings"]
+	#Charging speed (Lux per tick, 20 ticks = 1 second)
+	#Range: 1 ~ 1000
+	chargerSpeed = 50
+

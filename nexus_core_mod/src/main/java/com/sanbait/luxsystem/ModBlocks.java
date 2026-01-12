@@ -1,8 +1,5 @@
 package com.sanbait.luxsystem;
 
-import com.sanbait.luxsystem.blocks.LuxCoreBlock;
-import com.sanbait.luxsystem.blocks.LuxExtractorBlock;
-import com.sanbait.luxsystem.blocks.LuxCondenserBlock;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -19,18 +16,15 @@ public class ModBlocks {
         public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS,
                         LuxSystem.MODID);
 
+        // Жидкий Lux - блок жидкости
         public static final RegistryObject<LiquidBlock> LIQUID_LUX_BLOCK = BLOCKS.register("liquid_lux",
                         () -> new LiquidBlock(ModFluids.LIQUID_LUX_SOURCE,
                                         BlockBehaviour.Properties.copy(Blocks.WATER).noLootTable()));
 
-        public static final RegistryObject<Block> LUX_CORE = registerBlock("lux_core",
-                        () -> new LuxCoreBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
-
-        public static final RegistryObject<Block> LUX_EXTRACTOR = registerBlock("lux_extractor",
-                        () -> new LuxExtractorBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
-
-        public static final RegistryObject<Block> LUX_CONDENSER = registerBlock("lux_condenser",
-                        () -> new LuxCondenserBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
+        // Зарядник Lux - блок для быстрой зарядки предметов кристаллами
+        public static final RegistryObject<Block> LUX_CHARGER = registerBlock("lux_charger",
+                        () -> new com.sanbait.luxsystem.blocks.LuxChargerBlock(
+                                        BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
 
         private static <T extends Block> RegistryObject<T> registerBlock(String name, Supplier<T> block) {
                 RegistryObject<T> toReturn = BLOCKS.register(name, block);

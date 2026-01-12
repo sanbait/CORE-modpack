@@ -14,8 +14,7 @@ public class ClientModEvents {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
-            MenuScreens.register(ModMenuTypes.LUX_EXTRACTOR_MENU.get(), LuxExtractorScreen::new);
-            MenuScreens.register(ModMenuTypes.LUX_CONDENSER_MENU.get(), LuxCondenserScreen::new);
+            MenuScreens.register(ModMenuTypes.LUX_CHARGER_MENU.get(), LuxChargerScreen::new);
         });
     }
 }

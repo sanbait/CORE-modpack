@@ -384,11 +384,6 @@ public class NexusCore {
 
                 // Determine Capacity
                 int capacity = 1000; // Default
-                if (stack.getItem() instanceof com.sanbait.luxsystem.items.LuxArmorItem armor) {
-                    capacity = armor.getMaxLuxStored();
-                } else if (stack.getItem() instanceof com.sanbait.luxsystem.items.LuxPickaxeItem pick) {
-                    capacity = pick.getMaxLuxStored();
-                }
 
                 // Config Override
                 int configCap = getCapacityFromConfig(stack);

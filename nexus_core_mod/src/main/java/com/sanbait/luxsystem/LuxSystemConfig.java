@@ -20,6 +20,9 @@ public class LuxSystemConfig {
         public static final ForgeConfigSpec.IntValue MANUAL_INFUSION_DURATION;
         public static final ForgeConfigSpec.IntValue CANISTER_CAPACITY;
 
+        // Lux Charger Settings
+        public static final ForgeConfigSpec.IntValue CHARGER_SPEED;
+
         static {
                 BUILDER.push("Extractor Settings");
                 // Extractor Settings
@@ -41,6 +44,11 @@ public class LuxSystemConfig {
                                 .defineInRange("manualInfusionDuration", 6000, 100, 72000);
                 CANISTER_CAPACITY = BUILDER.comment("Lux Canister capacity (mB)")
                                 .defineInRange("canisterCapacity", 1000, 100, 10000);
+                BUILDER.pop();
+
+                BUILDER.push("Lux Charger Settings");
+                CHARGER_SPEED = BUILDER.comment("Charging speed (Lux per tick, 20 ticks = 1 second)")
+                                .defineInRange("chargerSpeed", 50, 1, 1000);
                 BUILDER.pop();
 
                 SPEC = BUILDER.build();

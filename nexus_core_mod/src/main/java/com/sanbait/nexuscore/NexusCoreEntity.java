@@ -35,7 +35,7 @@ public class NexusCoreEntity extends PathfinderMob
     public NexusCoreEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
         this.noCulling = true; // Disable culling standard way
-        this.noCulling = true;
+
         this.setNoAi(true); // Disable AI for the Core itself to save performance
         this.setPersistenceRequired(); // Mark as persistent so it doesn't despawn
     }
@@ -62,19 +62,91 @@ public class NexusCoreEntity extends PathfinderMob
     }
 
     // Lux getters/setters using EntityData
+    // Lux getters/setters
     public int getCurrentLux() {
-        return this.entityData.get(CURRENT_LUX);
+        if (this.level().isClientSide) {
+            return this.entityData.get(CURRENT_LUX);
+        }
+        return this.internalLux;
     }
 
+    // INTERNAL Storage (No Sync)
+    private int internalLux = 0;
+
+    private void setLuxInternal(int lux) {
+        this.internalLux = lux;
+    }
+
+    private int getLuxInternal() {
+        return this.internalLux;
+    }
+
+    // Public setter to update internal AND sync if needed immediately
     public void setCurrentLux(int lux) {
+        this.internalLux = lux;
         this.entityData.set(CURRENT_LUX, lux);
     }
 
     public void setCurrentLevel(int level) {
-        this.entityData.set(CURRENT_LEVEL, Mth.clamp(level, 1, 10)); // Max level 10
+        int oldLevel = this.getCurrentLevel();
+        int newLevel = Mth.clamp(level, 1, 10); // Max level 10
+        
+        if (oldLevel == newLevel) {
+            return; // Уровень не изменился
+        }
+        
+        this.entityData.set(CURRENT_LEVEL, newLevel);
         this.refreshDimensions();
         this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(calculateMaxHealth());
         this.setHealth(this.getMaxHealth());
+        
+        // Ставим/удаляем реальные блоки в мире
+        if (!this.level().isClientSide) {
+            updateCoreBlocks(oldLevel, newLevel);
+        }
+    }
+    
+    // Обновляет блоки в мире при изменении уровня
+    private void updateCoreBlocks(int oldLevel, int newLevel) {
+        net.minecraft.core.BlockPos basePos = this.blockPosition();
+        
+        // Удаляем блоки выше нового уровня (если уровень понизился)
+        if (newLevel < oldLevel) {
+            for (int i = newLevel + 1; i <= oldLevel; i++) {
+                net.minecraft.core.BlockPos pos = basePos.above(i - 1);
+                if (!this.level().isEmptyBlock(pos)) {
+                    this.level().setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+                }
+            }
+        }
+        
+        // Ставим/обновляем блоки для текущего уровня
+        for (int i = 1; i <= newLevel; i++) {
+            net.minecraft.core.BlockPos pos = basePos.above(i - 1);
+            net.minecraft.world.level.block.Block block = getBlockForLevel(i);
+            
+            // Ставим блок только если там воздух или другой блок (не тот, что нужен)
+            if (this.level().isEmptyBlock(pos) || this.level().getBlockState(pos).getBlock() != block) {
+                this.level().setBlock(pos, block.defaultBlockState(), 3);
+            }
+        }
+    }
+    
+    // Возвращает блок для уровня
+    private net.minecraft.world.level.block.Block getBlockForLevel(int level) {
+        switch (level) {
+            case 1: return net.minecraft.world.level.block.Blocks.COPPER_BLOCK;
+            case 2: return net.minecraft.world.level.block.Blocks.IRON_BLOCK;
+            case 3: return net.minecraft.world.level.block.Blocks.GOLD_BLOCK;
+            case 4: return net.minecraft.world.level.block.Blocks.DIAMOND_BLOCK;
+            case 5: return net.minecraft.world.level.block.Blocks.EMERALD_BLOCK;
+            case 6: return net.minecraft.world.level.block.Blocks.NETHERITE_BLOCK;
+            case 7: return net.minecraft.world.level.block.Blocks.BEACON;
+            case 8: return net.minecraft.world.level.block.Blocks.AMETHYST_BLOCK;
+            case 9: return net.minecraft.world.level.block.Blocks.END_STONE_BRICKS;
+            case 10: return net.minecraft.world.level.block.Blocks.OBSIDIAN;
+            default: return net.minecraft.world.level.block.Blocks.IRON_BLOCK;
+        }
     }
 
     private double calculateMaxHealth() {
@@ -124,6 +196,8 @@ public class NexusCoreEntity extends PathfinderMob
 
             if (this.anchorPos == null) {
                 this.anchorPos = this.blockPosition(); // Set anchor on first tick/spawn
+                // Инициализируем блоки при первом спавне
+                updateCoreBlocks(0, this.getCurrentLevel());
             } else if (this.distanceToSqr(this.anchorPos.getX() + 0.5, this.anchorPos.getY(),
                     this.anchorPos.getZ() + 0.5) > 0.01) {
                 this.setPos(this.anchorPos.getX() + 0.5, this.anchorPos.getY(), this.anchorPos.getZ() + 0.5);
@@ -148,10 +222,11 @@ public class NexusCoreEntity extends PathfinderMob
                 setCurrentLux(next);
             }
 
-            if (this.tickCount % 5 == 0) {
-                applyBuffs();
-                chargeNearbyItems();
-                checkUpgrade(); // Check for auto-upgrade items
+            // periodic operations (every 20 ticks = 1 sec)
+            if (this.tickCount % 20 == 0) {
+                // Sync Lux to Client periodically (Throttling Packet Spam)
+                this.entityData.set(CURRENT_LUX, this.getLuxInternal());
+                performPeriodicOperations();
             }
 
             // Server Side Light Manager - Removed periodic tick as per user request (State
@@ -160,6 +235,11 @@ public class NexusCoreEntity extends PathfinderMob
         } else {
             // Client Side Logic (Visuals)
             spawnRadiusParticles();
+            spawnGlowParticles(); // Желтые частицы свечения вокруг кристалла
+            
+            // Принудительно обновляем модель каждый тик для корректного отображения уровней
+            // Это гарантирует, что setCustomAnimations вызывается и обновляет видимость костей
+            // setCustomAnimations вызовется автоматически при рендеринге через GeckoLib
         }
     }
 
@@ -263,26 +343,6 @@ public class NexusCoreEntity extends PathfinderMob
         }
     }
 
-    private void chargeNearbyItems() {
-        double radius = NexusCoreConfig.BASE_RADIUS.get()
-                + (this.getCurrentLevel() * NexusCoreConfig.RADIUS_PER_LEVEL.get());
-        AABB searchBox = this.getBoundingBox().inflate(radius);
-
-        java.util.List<net.minecraft.world.entity.player.Player> players = this.level().getEntitiesOfClass(
-                net.minecraft.world.entity.player.Player.class, searchBox);
-
-        for (net.minecraft.world.entity.player.Player player : players) {
-            // Scan inventory for ILuxStorage items
-            // Main hand
-            chargeItem(player.getMainHandItem());
-            chargeItem(player.getOffhandItem());
-            // Armor
-            for (net.minecraft.world.item.ItemStack armor : player.getArmorSlots()) {
-                chargeItem(armor);
-            }
-        }
-    }
-
     private void chargeItem(net.minecraft.world.item.ItemStack stack) {
         int coreLux = getCurrentLux();
         if (coreLux <= 0)
@@ -354,19 +414,33 @@ public class NexusCoreEntity extends PathfinderMob
         return extracted;
     }
 
-    private void applyBuffs() {
+    private void performPeriodicOperations() {
         double radius = NexusCoreConfig.BASE_RADIUS.get()
                 + (this.getCurrentLevel() * NexusCoreConfig.RADIUS_PER_LEVEL.get());
         AABB searchBox = this.getBoundingBox().inflate(radius);
 
-        // Give Regeneration and Resistance to Players
-        this.level().getEntitiesOfClass(net.minecraft.world.entity.player.Player.class, searchBox).forEach(player -> {
+        java.util.List<net.minecraft.world.entity.player.Player> players = this.level().getEntitiesOfClass(
+                net.minecraft.world.entity.player.Player.class, searchBox);
+
+        for (net.minecraft.world.entity.player.Player player : players) {
+            // 1. Buffs
             player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
                     net.minecraft.world.effect.MobEffects.REGENERATION, 100, 0, true, false));
             player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
                     net.minecraft.world.effect.MobEffects.DAMAGE_RESISTANCE, 100, 0, true, false));
-        });
+
+            // 2. Charge Items
+            chargeItem(player.getMainHandItem());
+            chargeItem(player.getOffhandItem());
+            for (net.minecraft.world.item.ItemStack armor : player.getArmorSlots()) {
+                chargeItem(armor);
+            }
+        }
+        checkUpgrade(); // Check for auto-upgrade items
     }
+
+    // Previous separate methods removed/merged
+    // applyBuffs, chargeNearbyItems removed in favor of combined loop above
 
     private void spawnRadiusParticles() {
         if (!NexusCore.RENDER_PARTICLES || !this.isAlive())
@@ -395,6 +469,34 @@ public class NexusCoreEntity extends PathfinderMob
                 double y = this.getY() + 0.5D;
 
                 this.level().addParticle(net.minecraft.core.particles.ParticleTypes.END_ROD, x, y, z, 0, 0, 0);
+            }
+        });
+    }
+
+    // Добавляем желтые частицы свечения вокруг кристалла
+    private void spawnGlowParticles() {
+        if (!NexusCore.RENDER_PARTICLES || !this.isAlive())
+            return;
+
+        net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
+            net.minecraft.client.player.LocalPlayer player = net.minecraft.client.Minecraft.getInstance().player;
+            if (player != null && this.distanceToSqr(player) > 64 * 64) {
+                return;
+            }
+
+            // Желтые частицы свечения вокруг кристалла (как на скриншоте)
+            if (this.tickCount % 5 == 0) {
+                double height = this.getBoundingBox().getYsize();
+                double x = this.getX() + (this.random.nextDouble() - 0.5) * 0.5;
+                double y = this.getY() + this.random.nextDouble() * height;
+                double z = this.getZ() + (this.random.nextDouble() - 0.5) * 0.5;
+
+                // Желтые частицы (используем DustParticleOptions с желтым цветом)
+                this.level().addParticle(
+                        new net.minecraft.core.particles.DustParticleOptions(
+                                new org.joml.Vector3f(1.0f, 0.9f, 0.3f), // Желтый/золотой цвет
+                                1.5f),
+                        x, y, z, 0, 0, 0);
             }
         });
     }

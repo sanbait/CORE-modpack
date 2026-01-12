@@ -11,7 +11,11 @@ public class NexusCoreModel extends GeoModel<NexusCoreEntity> {
 
     @Override
     public ResourceLocation getTextureResource(NexusCoreEntity object) {
-        return new ResourceLocation(NexusCore.MODID, "textures/entity/nexus_core.png");
+        // Используем текстуру-атлас с разными блоками для разных уровней
+        // В модели UV координаты настроены для использования разных частей текстуры
+        // Пока используем железный блок как временную текстуру
+        // TODO: Создать текстуру-атлас 640x64 с блоками: медь, железо, золото, алмаз, изумруд, незерит и т.д.
+        return new ResourceLocation("minecraft", "textures/block/iron_block");
     }
 
     @Override
