@@ -1,0 +1,7 @@
+{
+    "variants": {
+        "": {
+            "model": "luxsystem:block/lux_extractor"
+        }
+    }
+}

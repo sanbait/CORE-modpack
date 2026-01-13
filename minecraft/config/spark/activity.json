@@ -1,0 +1,119 @@
+[
+  {
+    "user": {
+      "type": "player",
+      "name": "sunbait",
+      "uniqueId": "2a645cbf-55dd-4e91-a25a-4ccae84e6179"
+    },
+    "time": 1768241612274,
+    "type": "Profiler",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/hPFk4Myawd"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "sunbait",
+      "uniqueId": "2a645cbf-55dd-4e91-a25a-4ccae84e6179"
+    },
+    "time": 1768204878393,
+    "type": "Profiler (live)",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/lOKpRvxHfw"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "sunbait",
+      "uniqueId": "2a645cbf-55dd-4e91-a25a-4ccae84e6179"
+    },
+    "time": 1768204870031,
+    "type": "Profiler",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/M36sVuubeH"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "sunbait",
+      "uniqueId": "2a645cbf-55dd-4e91-a25a-4ccae84e6179"
+    },
+    "time": 1768204444388,
+    "type": "Profiler (live)",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/fyNg9zIXWO"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "sunbait",
+      "uniqueId": "2a645cbf-55dd-4e91-a25a-4ccae84e6179"
+    },
+    "time": 1768204428401,
+    "type": "Profiler",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/jBoEEu7EnC"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "sunbait",
+      "uniqueId": "2a645cbf-55dd-4e91-a25a-4ccae84e6179"
+    },
+    "time": 1768203675700,
+    "type": "Profiler",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/3tWXOPX8C6"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "sunbait",
+      "uniqueId": "2a645cbf-55dd-4e91-a25a-4ccae84e6179"
+    },
+    "time": 1768129519713,
+    "type": "Profiler",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/a5nbqkF5SZ"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "sunbait",
+      "uniqueId": "2a645cbf-55dd-4e91-a25a-4ccae84e6179"
+    },
+    "time": 1768126952350,
+    "type": "Profiler",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/5jq3UB1k7b"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "sunbait",
+      "uniqueId": "2a645cbf-55dd-4e91-a25a-4ccae84e6179"
+    },
+    "time": 1768126603678,
+    "type": "Profiler",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/xhI20EXN8l"
+    }
+  }
+]

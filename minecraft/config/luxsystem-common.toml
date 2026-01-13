@@ -1,0 +1,30 @@
+
+["Extractor Settings"]
+	#Extraction speed (ticks per operation)
+	#Range: 1 ~ 1000
+	extractorSpeed = 100
+	#Extractor tank capacity (mB)
+	#Range: 1000 ~ 100000
+	extractorTankCapacity = 10000
+
+["Condenser Settings"]
+	#Condensing speed (ticks per operation)
+	#Range: 1 ~ 1000
+	condenserSpeed = 200
+	#Condenser tank capacity (mB)
+	#Range: 1000 ~ 100000
+	condenserTankCapacity = 10000
+
+["Phantom Mechanics"]
+	#Manual infusion duration (ticks, 6000 = 5 minutes)
+	#Range: 100 ~ 72000
+	manualInfusionDuration = 6000
+	#Lux Canister capacity (mB)
+	#Range: 100 ~ 10000
+	canisterCapacity = 1000
+
+["Lux Charger Settings"]
+	#Charging speed (Lux per tick, 20 ticks = 1 second)
+	#Range: 1 ~ 1000
+	chargerSpeed = 50
+

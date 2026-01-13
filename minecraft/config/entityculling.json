@@ -13,7 +13,8 @@
   "entityWhitelist": [
     "botania:mana_burst",
     "drg_flares:drg_flares",
-    "quark:soul_bead"
+    "quark:soul_bead",
+    "nexuscore:core"
   ],
   "tracingDistance": 128,
   "debugMode": false,
@@ -59,7 +60,9 @@
     "minecraft:pale_oak_chest_boat",
     "minecraft:bamboo_chest_raft",
     "minecraft:mangrove_chest_boat",
-    "voidscape:corrupted_pawn"
+    "voidscape:corrupted_pawn",
+    "minecraft:skeleton",
+    "nexuscore:core"
   ],
   "disableF3": false,
   "skipEntityCulling": false,

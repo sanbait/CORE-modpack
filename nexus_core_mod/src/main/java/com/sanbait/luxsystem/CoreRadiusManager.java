@@ -40,4 +40,11 @@ public class CoreRadiusManager {
         }
         return false;
     }
+    public static boolean hasCore(Level level) {
+        activeCores.removeIf(core -> core.isRemoved());
+        for (NexusCoreEntity core : activeCores) {
+            if (core.level() == level) return true;
+        }
+        return false;
+    }
 }

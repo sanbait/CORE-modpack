@@ -248,7 +248,7 @@
 	bunting = true
 	sconce = true
 	sconce_lever = true
-	pancake = true
+	pancake = false
 	checker_block = true
 	raked_gravel = true
 	feather_block = true
@@ -396,7 +396,7 @@
 		trapdoor = true
 
 [tools]
-	candy = true
+	candy = false
 	stasis = true
 	altimeter = true
 	confetti_popper = true
@@ -433,7 +433,7 @@
 		range_multiplier = 0.25
 
 	[tools.bubble_blower]
-		enabled = true
+		enabled = false
 		#Amount of soap consumed per bubble block placed
 		#Range: 1 ~ 25
 		stasis_cost = 5
@@ -462,7 +462,7 @@
 		exclusive_to_crossbows = false
 
 	[tools.flute]
-		enabled = true
+		enabled = false
 		#Radius in which an unbound flute will search pets
 		#Range: 0 ~ 500
 		unbound_radius = 64
@@ -493,7 +493,7 @@
 			break_blocks = "WEAK"
 
 	[tools.slingshot]
-		enabled = true
+		enabled = false
 		#Slingshot range multiplier. Affect the initial projectile speed
 		#Range: 0.0 ~ 5.0
 		range_multiplier = 1.0

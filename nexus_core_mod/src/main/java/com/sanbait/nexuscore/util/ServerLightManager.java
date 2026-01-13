@@ -71,16 +71,25 @@ public class ServerLightManager {
 
     public static void forceCoreLight(NexusCoreEntity core) {
         // State-Based: Just place the light at current position.
-        // No tick checks, no movement checks (Core is immobile).
+        // FIX: Core base is solid blocks. Place light ABOVE.
+        
         BlockPos currentPos = core.blockPosition();
-
-        // Ensure we track it for removal later
-        if (!coreLights.containsKey(core.getId())) {
-            coreLights.put(core.getId(), currentPos);
+        int offset = core.getCurrentLevel(); 
+        BlockPos newLightPos = currentPos.above(offset);
+        
+        // Check if we have an old light tracked
+        if (coreLights.containsKey(core.getId())) {
+            BlockPos oldPos = coreLights.get(core.getId());
+            if (!oldPos.equals(newLightPos)) {
+                removeLight(core.level(), oldPos); // Clean old
+                coreLights.put(core.getId(), newLightPos); // Update track
+            }
+        } else {
+             coreLights.put(core.getId(), newLightPos);
         }
 
         // Core is FULL BRIGHTNESS (15)
-        placeLight(core.level(), currentPos, 15);
+        placeLight(core.level(), newLightPos, 15);
     }
 
     public static void onCoreRemoved(NexusCoreEntity core) {

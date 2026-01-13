@@ -1,135 +1,71 @@
-# Техническая Документация: Мод "The Core" (Ядро)
+# Technical Documentation: Nexus Core Mod
 
-**Версия:** 1.0 (Gameplay Ready)
-**Тип:** KubeJS Server-Side Mod
-**Namespace:** `core:`
+**Version:** 1.1.18 (Java Forge Mod)
+**State:** Stable, Feature-Complete
+**Namespace:** `nexuscore` (and `luxsystem`)
 
-## 1. Концепция
+## 1. Concept
 
-"Ядро" (Nexus Core) — центральный элемент геймплея в стиле Tower Defense.
-Это блок, который игроки должны защищать от волн монстров. Если Ядро уничтожено — происходит взрыв, и база считается потерянной.
-
----
-
-## 2. Архитектура: Гибрид (Block + Proxy Entity)
-
-Мобы в Minecraft не умеют "атаковать блоки" как живые цели.
-Для реализации механики агра используется **Proxy Entity** (Прокси-Сущность).
-
-### А) Блок: `core:nexus_core`
-
-* **Тип:** `Basic Block` (Startup Registry).
-* **Свойства:**
-  * `material`: Metal.
-  * `hardness`: -1.0 (Неразрушимый стандартными методами).
-  * `lightLevel`: 1.
-* **Функция:** Визуальное представление, коллизия, точка спавна сущности.
-
-### Б) Сущность: `minecraft:iron_golem` (Proxy)
-
-* **Почему Голем?** Ванильные зомби/скелеты имеют встроенную ненависть к големам. Это упрощает базовый агр.
-* **Конфигурация (NBT):**
-  * `Silent`: true (Без звуков).
-  * `NoAI`: true (Не двигается).
-  * `Invulnerable`: false (Получает урон).
-  * `Glowing`: true (Виден сквозь стены, подсветка).
-  * `Tags`: `["core_soul"]` (Марке-идентификатор).
-  * `Attributes`:
-    * `generic.max_health`: 100.0.
-    * `generic.scale`: 0.5 (Уменьшен, чтобы влезать в блок).
-    * `generic.attack_damage`: 0.0 (Пассивный, не бьет в ответ).
+The **Nexus Core** is a central "Tower Defense" entity and a power generator.
+Unlike the previous KubeJS prototype, this is a fully custom **Java Mod Entity**.
 
 ---
 
-## 3. Игровая Логика (`core/logic.js`)
+## 2. Architecture: Custom Entity + GeckoLib
 
-### 3.1 Установка (Placement)
+We do NOT use a Block + Proxy system anymore.
+The Core is a single `PathfinderMob` with a `GeckoLib` model.
 
-1. Игрок ставит блок `core:nexus_core`.
-2. Скрипт создает невидимого (или подсвеченного) Голема внутри блока.
-3. Инициализируется NBT: `coreXP = 100` (Щит).
+### 2.1 Entity: `nexuscore:core`
 
-### 3.2 Система Урона (Survival)
+* **Class:** `NexusCoreEntity` (extends `PathfinderMob`, `GeoEntity`)
+* **Model:** `nexus_core.geo.json` (10 static bones `level1`...`level10`).
+* **Rendering:** `NexusCoreRenderer`. Animations handle the visual "growth" by toggling bone visibility based on Level.
+* **Physics:** Custom "Anchor System" prevents displacement by pistons/explosions (`anchorPos` in NBT).
 
-Когда моб бьет Ядро, срабатывает `EntityEvents.hurt`:
+### 2.2 Lux System (Power)
 
-1. **Фаза 1: Щит (`coreXP`)**
-    * Весь урон вычитается из `coreXP`.
-    * Если `coreXP` падает ниже 0, переходим к Фазе 1.5.
-2. **Фаза 1.5: Потеря Уровня (De-leveling)**
-    * Если Уровень > 0, Ядро теряет 1 уровень.
-    * `coreXP` восстанавливается (откат прогресса).
-    * `Max Health` снижается.
-3. **Фаза 2: Здоровье (HP)**
-    * Если Уровень = 0 (или 1 без XP) и щит пробит, урон идет по HP.
-    * Визуальный эффект: `entity.iron_golem.damage`.
-
-### 3.3 Уничтожение (Death)
-
-Если HP Голема падает до 0:
-
-1. Событие `EntityEvents.death`.
-2. **Взрыв Ядра:**
-   * Сила взрыва зависит от уровня: `Power = 5.0 + (Level * 2.0)`.
-   * Тип: `BREAK` (Разрушает блоки).
-   * Сообщение в чат всем игрокам.
-3. **Очистка:** Блок заменяется на воздух, сущность удаляется.
-4. **Возврат:** Предмет `core:nexus_core` возвращается ближайшему игроку (Аварийная капсула).
-
-### 3.4 Взаимодействие Игрока (Upgrades)
-
-* **ПКМ (Пустая рука):** Проверка статуса (Level, XP, HP).
-* **ПКМ (Ресурс):** Кормление Ядра для повышения уровня (XP).
-  * Iron Ingot: +10 XP
-  * Gold Ingot: +20 XP
-  * Diamond: +100 XP
-  * Create Alloys: +15/30 XP
-* **Shift + ПКМ:** Демонтаж (только для владельца/креатива).
-
-### 3.5 Защита (Security)
-
-* **Anti-Drop:** Ядро нельзя выбросить из инвентаря.
-* **Anti-Container:** Ядро нельзя положить в сундук/бочку/шалкер. Проверка происходит каждый тик.
-
-## 4. AI и Агрессия (`core/ai_tuning.js`)
-
-Самая сложная часть — заставить мобов игнорировать игрока.
-
-### 4.1 Приоритеты Целей (Target Goals)
-
-Мы используем нативную систему приоритетов Minecraft AI (через KubeJS):
-
-1. **Priority 1: Attack Core (Iron Golem)**
-    * Всем монстрам при спавне добавляется цель `NearestAttackableTargetGoal` -> `IronGolem`.
-    * `mustSee = false` (Видят сквозь стены).
-    * Это ГЛАВНЫЙ приоритет. Если моб никого не бьет — он ищет Ядро.
-
-2. **Priority 2: Attack Player (Vanilla)**
-    * Стандартная цель ванильных мобов.
-    * Имеет более низкий приоритет, чем Ядро.
-
-3. **Priority "Revenge" (HurtByTargetGoal)**
-    * Ванильная механика: "Бей того, кто ударил меня".
-    * Имеет **АБСОЛЮТНЫЙ** приоритет.
-    * Если игрок ударит зомби, зомби переключится на игрока (Tanking mechanic). Если игрок убежит/умрет, зомби вернется к Приоритету 1 (Ядро).
-
-### 4.2 Тюнинг (Improved Mobs)
-
-* **Break Blocks:** Включено (Шанс 80%).
-* **Follow Range:** Увеличено до 80-100 блоков (через скрипт атрибутов), чтобы мобы видели Ядро издалека.
+* **Implementation:** Forge Capabilities (`ILuxStorage`).
+* **Context:** The Core is a generator (Gen Rate depends on Level).
+* **Mechanic:**
+  * **Items:** Vanilla items (Diamond Sword, etc.) act as batteries if they have the Capability attached.
+  * **Charging:** Core charges nearby items in player inventories every second.
+  * **Visuals:** No custom textures needed. Vanilla items show a "Lux Bar" in tooltips via `ItemTooltipEvent`.
 
 ---
 
-## 5. Известные особенности
+## 3. Game Logic
 
-* **/kill @e:** Убивает Ядро (вызывает взрыв). Для безопасного удаления используйте Креатив клик.
-* **Стены:** Мобы чувствуют Ядро сквозь стены и будут ломать их (благодаря Improved Mobs + `mustSee: false`).
+### 3.1 Upgrades & Healing
+
+Interaction handled in `mobInteract`:
+
+1. **Check HP:** If damaged, item is used to **Heal** (Priority).
+2. **Check Level:** If full HP, item is used to **Upgrade** (Level 1 -> 10).
+3. **Cost:** Configurable in `nexuscore-common.toml` (`modid:item|amount`).
+
+### 3.2 AI & Targeting
+
+Custom AI Goal: `CoreAttackGoal`
+
+* Monsters utilize standard "Nearest Attackable Target".
+* Priority logic ensures mobs target the Core but switch to Player if provoked ("Revenge" mechanic).
+* **Fix:** `PhantomBlockHandler` manages interaction events for Lux-related blocks using the `luxsystem` mod ID.
 
 ---
 
-**Статус разработки:** [RELEASE v1.0]
-**Файлы:**
+## 4. File Structure & Assets
 
-* `startup_scripts/core_registry.js`
-* `server_scripts/core/logic.js`
-* `server_scripts/core/ai_tuning.js`
+* **Jar:** `nexus_core-1.1.18.jar`
+* **Config:** `config/nexuscore-common.toml`
+* **Assets:**
+  * `assets/nexuscore/geo/nexus_core.geo.json` (Model)
+  * `assets/nexuscore/textures/entity/nexus_core.png` (Texture Atlas)
+  * `assets/luxsystem/lang/` (Localization for Lux features)
+
+---
+
+## 5. Maintenance Notes
+
+* **Localization:** Strictly separated. `nexuscore` keys in its own folder, `luxsystem` keys in its own.
+* **Visuals:** If "Invisible Golem" issues arise, check `NexusCoreRenderer`. The current code uses a GeoRenderer, so vanilla rendering issues shouldn't apply.
