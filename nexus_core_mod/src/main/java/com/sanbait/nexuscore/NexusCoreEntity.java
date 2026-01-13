@@ -31,6 +31,7 @@ public class NexusCoreEntity extends PathfinderMob
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private final net.minecraftforge.items.ItemStackHandler upgradeInventory = new net.minecraftforge.items.ItemStackHandler(
             1);
+    boolean blocksInitialized = false; // Флаг для отслеживания инициализации блоков (package-private для ServerTickEvent)
 
     public NexusCoreEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
@@ -38,6 +39,7 @@ public class NexusCoreEntity extends PathfinderMob
 
         this.setNoAi(true); // Disable AI for the Core itself to save performance
         this.setPersistenceRequired(); // Mark as persistent so it doesn't despawn
+        this.noPhysics = true; // Fix FPS: Prevent collision checks/push-back loops
     }
 
     @Override
@@ -77,7 +79,7 @@ public class NexusCoreEntity extends PathfinderMob
         this.internalLux = lux;
     }
 
-    private int getLuxInternal() {
+    int getLuxInternal() { // package-private для ServerTickEvent
         return this.internalLux;
     }
 
@@ -103,12 +105,22 @@ public class NexusCoreEntity extends PathfinderMob
         // Ставим/удаляем реальные блоки в мире
         if (!this.level().isClientSide) {
             updateCoreBlocks(oldLevel, newLevel);
+            // FIX: Update light position immediately when level changes
+            com.sanbait.nexuscore.util.ServerLightManager.forceCoreLight(this);
         }
     }
     
     // Обновляет блоки в мире при изменении уровня
-    private void updateCoreBlocks(int oldLevel, int newLevel) {
+    void updateCoreBlocks(int oldLevel, int newLevel) { // package-private для ServerTickEvent
         net.minecraft.core.BlockPos basePos = this.blockPosition();
+        
+        // ВАЖНО: Удаляем все маяки в области ядра (они издают постоянный шум)
+        for (int i = 0; i <= 10; i++) {
+            net.minecraft.core.BlockPos pos = basePos.above(i);
+            if (this.level().getBlockState(pos).getBlock() == net.minecraft.world.level.block.Blocks.BEACON) {
+                this.level().setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+            }
+        }
         
         // Удаляем блоки выше нового уровня (если уровень понизился)
         if (newLevel < oldLevel) {
@@ -141,7 +153,7 @@ public class NexusCoreEntity extends PathfinderMob
             case 4: return net.minecraft.world.level.block.Blocks.DIAMOND_BLOCK;
             case 5: return net.minecraft.world.level.block.Blocks.EMERALD_BLOCK;
             case 6: return net.minecraft.world.level.block.Blocks.NETHERITE_BLOCK;
-            case 7: return net.minecraft.world.level.block.Blocks.BEACON;
+            case 7: return net.minecraft.world.level.block.Blocks.LAPIS_BLOCK;
             case 8: return net.minecraft.world.level.block.Blocks.AMETHYST_BLOCK;
             case 9: return net.minecraft.world.level.block.Blocks.END_STONE_BRICKS;
             case 10: return net.minecraft.world.level.block.Blocks.OBSIDIAN;
@@ -175,10 +187,13 @@ public class NexusCoreEntity extends PathfinderMob
         return EntityDimensions.fixed(1.5f, 1.0f * this.getCurrentLevel());
     }
 
-    private net.minecraft.core.BlockPos anchorPos = null;
+    net.minecraft.core.BlockPos anchorPos = null; // package-private для доступа из NexusCore
 
     @Override
     public void remove(RemovalReason reason) {
+        if (reason.shouldDestroy() && !this.level().isClientSide) {
+            breakCoreBlocks();
+        }
         super.remove(reason);
         if (!this.level().isClientSide) {
             com.sanbait.nexuscore.util.ServerLightManager.onCoreRemoved(this);
@@ -186,61 +201,40 @@ public class NexusCoreEntity extends PathfinderMob
         }
     }
 
+    private void breakCoreBlocks() {
+        int level = this.getCurrentLevel();
+        net.minecraft.core.BlockPos basePos = this.anchorPos != null ? this.anchorPos : this.blockPosition();
+        
+        for (int i = 0; i <= level; i++) {
+             net.minecraft.core.BlockPos pos = basePos.above(i);
+             // Remove core blocks and beacons
+             // FORCE LOAD chunk if needed? No, just check if loaded.
+             if (this.level().isLoaded(pos)) {
+                 if (!this.level().isEmptyBlock(pos)) {
+                     // Force set to air to avoid any ghost state
+                     this.level().setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+                 }
+             }
+        }
+    }
+
     @Override
     public void tick() {
         super.tick();
 
-        // ANCHOR LOGIC: Force position to stay at anchor
+        // FIX FPS: Минимальная логика в tick() - только anchor для предотвращения смещения
+        // ВСЯ остальная логика перенесена на события (ServerTickEvent)
         if (!this.level().isClientSide) {
-            com.sanbait.luxsystem.CoreRadiusManager.addCore(this); // Ensure registered
-
             if (this.anchorPos == null) {
-                this.anchorPos = this.blockPosition(); // Set anchor on first tick/spawn
-                // Инициализируем блоки при первом спавне
-                updateCoreBlocks(0, this.getCurrentLevel());
+                this.anchorPos = this.blockPosition();
             } else if (this.distanceToSqr(this.anchorPos.getX() + 0.5, this.anchorPos.getY(),
-                    this.anchorPos.getZ() + 0.5) > 0.01) {
+                    this.anchorPos.getZ() + 0.5) > 0.0001) {
                 this.setPos(this.anchorPos.getX() + 0.5, this.anchorPos.getY(), this.anchorPos.getZ() + 0.5);
-                this.setDeltaMovement(0, 0, 0); // Kill momentum
+                this.setDeltaMovement(0, 0, 0);
+                this.hasImpulse = false;
             }
-
-            // Server Side Logic - OPTIMIZED TICKS
-            // Mob Attraction is now handled by Vanilla AI Goals (EntityJoinLevelEvent)
-            // Apply buffs and charge items every 1 second (20 ticks)
-            // User requested events, but for "Area of Effect" charging, a centralized
-            // periodic check
-            // from the Source (Core) is the most performant "Server Event" we can create.
-
-            // Lux Regeneration Logic
-            int genPerTick = this.getCurrentLevel() * NexusCoreConfig.CORE_LUX_GENERATION_PER_LEVEL.get();
-            int maxLux = this.getCurrentLevel() * NexusCoreConfig.CORE_LUX_CAPACITY_PER_LEVEL.get();
-
-            // Regenerate
-            int current = getCurrentLux();
-            if (current < maxLux) {
-                int next = Math.min(current + genPerTick, maxLux);
-                setCurrentLux(next);
-            }
-
-            // periodic operations (every 20 ticks = 1 sec)
-            if (this.tickCount % 20 == 0) {
-                // Sync Lux to Client periodically (Throttling Packet Spam)
-                this.entityData.set(CURRENT_LUX, this.getLuxInternal());
-                performPeriodicOperations();
-            }
-
-            // Server Side Light Manager - Removed periodic tick as per user request (State
-            // Based)
-            // com.sanbait.nexuscore.util.ServerLightManager.tickCore(this);
-        } else {
-            // Client Side Logic (Visuals)
-            spawnRadiusParticles();
-            spawnGlowParticles(); // Желтые частицы свечения вокруг кристалла
-            
-            // Принудительно обновляем модель каждый тик для корректного отображения уровней
-            // Это гарантирует, что setCustomAnimations вызывается и обновляет видимость костей
-            // setCustomAnimations вызовется автоматически при рендеринге через GeckoLib
         }
+        // Клиентская логика (частицы) полностью убрана из tick() - будет через события
     }
 
     @Override
@@ -337,9 +331,23 @@ public class NexusCoreEntity extends PathfinderMob
                         this.getY() + 1.5, this.getZ(), 20, 0.5, 0.5, 0.5, 0.1);
             }
 
+            this.level().broadcastEntityEvent(this, (byte) 60); // Custom event for particles? or use 2001?
+            
             // Actually consume item
             inputStack.shrink(requiredAmount);
             this.upgrade();
+        }
+    }
+
+    // Client-side handler for "break" or "upgrade" effects if needed
+    @Override
+    public void handleEntityEvent(byte id) {
+        if (id == 60) {
+            for(int i = 0; i < 20; ++i) {
+               this.level().addParticle(net.minecraft.core.particles.ParticleTypes.END_ROD, this.getRandomX(0.5D), this.getRandomY(), this.getRandomZ(0.5D), 0.0D, 0.0D, 0.0D);
+            }
+        } else {
+            super.handleEntityEvent(id);
         }
     }
 
@@ -414,7 +422,7 @@ public class NexusCoreEntity extends PathfinderMob
         return extracted;
     }
 
-    private void performPeriodicOperations() {
+    void performPeriodicOperations() { // package-private для ServerTickEvent
         double radius = NexusCoreConfig.BASE_RADIUS.get()
                 + (this.getCurrentLevel() * NexusCoreConfig.RADIUS_PER_LEVEL.get());
         AABB searchBox = this.getBoundingBox().inflate(radius);
@@ -442,7 +450,7 @@ public class NexusCoreEntity extends PathfinderMob
     // Previous separate methods removed/merged
     // applyBuffs, chargeNearbyItems removed in favor of combined loop above
 
-    private void spawnRadiusParticles() {
+    void spawnRadiusParticles() { // package-private для ClientTickEvent
         if (!NexusCore.RENDER_PARTICLES || !this.isAlive())
             return; // Toggle check & Dead check
 
@@ -457,16 +465,13 @@ public class NexusCoreEntity extends PathfinderMob
                     + (this.getCurrentLevel() * NexusCoreConfig.RADIUS_PER_LEVEL.get());
 
             // Spawn particles in a circle
-            // OPTIMIZATION: Reduced from 10 per tick (200/sec) to 2 per tick (40/sec) to
-            // save FPS.
-            // HEAVY OPTIMIZATION: Reduced drastically to prevent FPS drop.
-            // Only spawn 1 particle every 10 ticks per client.
-            if (this.tickCount % 10 == 0) {
+            // Restored loop for visibility
+            for (int i = 0; i < 5; i++) {
                 double angle = this.random.nextDouble() * 2 * Math.PI;
                 // Use existing 'radius' variable calculated above
                 double x = this.getX() + radius * Math.cos(angle);
                 double z = this.getZ() + radius * Math.sin(angle);
-                double y = this.getY() + 0.5D;
+                double y = this.getY() + 0.5D + (this.random.nextDouble() * 0.5);
 
                 this.level().addParticle(net.minecraft.core.particles.ParticleTypes.END_ROD, x, y, z, 0, 0, 0);
             }
@@ -474,7 +479,7 @@ public class NexusCoreEntity extends PathfinderMob
     }
 
     // Добавляем желтые частицы свечения вокруг кристалла
-    private void spawnGlowParticles() {
+    void spawnGlowParticles() { // package-private для ClientTickEvent
         if (!NexusCore.RENDER_PARTICLES || !this.isAlive())
             return;
 
@@ -484,14 +489,15 @@ public class NexusCoreEntity extends PathfinderMob
                 return;
             }
 
-            // Желтые частицы свечения вокруг кристалла (как на скриншоте)
-            if (this.tickCount % 5 == 0) {
+            // Желтые частицы теперь вызываются из ClientTickEvent, проверка tickCount убрана
+            // Спавним частицу каждый раз когда вызывается метод (уже отфильтровано в ClientTickEvent)
+            {
                 double height = this.getBoundingBox().getYsize();
                 double x = this.getX() + (this.random.nextDouble() - 0.5) * 0.5;
                 double y = this.getY() + this.random.nextDouble() * height;
                 double z = this.getZ() + (this.random.nextDouble() - 0.5) * 0.5;
 
-                // Желтые частицы (используем DustParticleOptions с желтым цветом)
+                // Желтые частицы
                 this.level().addParticle(
                         new net.minecraft.core.particles.DustParticleOptions(
                                 new org.joml.Vector3f(1.0f, 0.9f, 0.3f), // Желтый/золотой цвет
@@ -502,40 +508,59 @@ public class NexusCoreEntity extends PathfinderMob
     }
 
     @Override
-    public boolean canBeAffected(net.minecraft.world.effect.MobEffectInstance pEffect) {
-        if (pEffect.getEffect() == net.minecraft.world.effect.MobEffects.INVISIBILITY) {
-            return false;
-        }
-        return super.canBeAffected(pEffect);
+    public boolean canBreatheUnderwater() {
+        return true;
+    }
+
+    @Override
+    protected net.minecraft.sounds.SoundEvent getAmbientSound() {
+        return null; // Silent
+    }
+
+    @Override
+    protected net.minecraft.sounds.SoundEvent getHurtSound(net.minecraft.world.damagesource.DamageSource source) {
+        return null; // Silent
+    }
+
+    @Override
+    protected net.minecraft.sounds.SoundEvent getDeathSound() {
+        return null; // Silent
     }
 
     @Override
     public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount) {
+        // Prevent suffocation, drowning, fall damage
+        if (source.is(net.minecraft.world.damagesource.DamageTypes.IN_WALL) || 
+            source.is(net.minecraft.world.damagesource.DamageTypes.DROWN) ||
+            source.is(net.minecraft.world.damagesource.DamageTypes.FALL) ||
+            source.is(net.minecraft.world.damagesource.DamageTypes.FLY_INTO_WALL)) {
+            return false;
+        }
+
+        // Allow Creative players to insta-kill
         if (source.getEntity() instanceof net.minecraft.world.entity.player.Player player && player.isCreative()) {
             this.setHealth(0);
             this.die(source);
             return true;
         }
-
-        if (!this.level().isClientSide) {
-            // Visuals: Bleed particles (Redstone dust look-alike or purely red particles)
-            if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-                serverLevel.sendParticles(
-                        new net.minecraft.core.particles.DustParticleOptions(new org.joml.Vector3f(1.0f, 0.0f, 0.0f),
-                                1.0f),
-                        this.getX(), this.getY() + 1.0, this.getZ(),
-                        20, 0.5, 0.5, 0.5, 0.1);
-                this.playSound(net.minecraft.sounds.SoundEvents.IRON_GOLEM_DAMAGE, 1.0F, 1.0F);
-            }
-        }
+        
+        // Standard damage logic (keeps health reduction), but NO extra sounds/particles
+        // We do NOT call super.hurt if we want to skip the red "flash" of the entity turning red?
+        // But the entity is invisible (GeckoLib model not rendered), so the red flash shouldn't be visible anyway.
+        // We just want to avoid the "bleed" particles we manually added.
+        
         return super.hurt(source, amount);
     }
 
     @Override
     public boolean isInvulnerableTo(net.minecraft.world.damagesource.DamageSource source) {
         if (source.getEntity() instanceof net.minecraft.world.entity.player.Player player) {
-            // Allow Creative players to break it
-            return !player.isCreative();
+            return !player.isCreative(); // Only creative players can hurt it?
+            // User said "block", blocks can be broken by survival players.
+            // But this entity has 200 HP and armor.
+            // If I return 'true' here for non-creative, it becomes unbreakable in Survival.
+            // The previous code allowed survival players to break it (implied by isInvulnerableTo logic).
+            // I will stick to: allow damage, but keep it silent.
         }
         if (source.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION)) {
             return true;
@@ -555,12 +580,15 @@ public class NexusCoreEntity extends PathfinderMob
                 this.setCurrentLevel(currentLvl - 1);
                 this.setHealth(this.getMaxHealth());
 
-                // Visuals
+                // Visuals for Level Down (Break sound for block is appropriate)
                 this.level().levelEvent(2001, this.blockPosition(), net.minecraft.world.level.block.Block
                         .getId(net.minecraft.world.level.block.Blocks.OBSIDIAN.defaultBlockState()));
-                this.playSound(net.minecraft.sounds.SoundEvents.ANVIL_BREAK, 1.0F, 1.0F);
+                // this.playSound(net.minecraft.sounds.SoundEvents.ANVIL_BREAK, 1.0F, 1.0F); // Optional: Keep break sound? User said "no sounds". I'll comment it out to be safe.
 
                 return; // Prevent death
+            } else {
+                // Final Death - Cleanup
+                breakCoreBlocks();
             }
         }
         super.die(source);

@@ -1,0 +1,1 @@
+com/sanbait/shadowgrid/mixin/MixinRenderChunk getOrigin ()Lnet/minecraft/core/BlockPos; m_112839_

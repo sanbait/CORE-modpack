@@ -1,0 +1,7 @@
+{
+    "block.shadowgrid.gateway": "Border Gateway",
+    "shadowgrid.warning.chat": "§c§lYOU ARE ENTERING A LOCKED SECTOR! TURN BACK!",
+    "shadowgrid.warning.title": "LOCKED REGION",
+    "shadowgrid.warning.subtitle": "Turn back immediately!",
+    "itemGroup.shadowgrid": "Shadow Grid"
+}

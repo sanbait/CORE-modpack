@@ -150,8 +150,8 @@
 				sign_post = true
 
 			[light_sources.settings.block_entities.create]
-				funnel = true
 				clockwork_bearing = true
+				funnel = true
 				hand_crank = true
 				simple_kinetic = true
 				clipboard = true
@@ -159,16 +159,16 @@
 				harvester = true
 				display_link = true
 				lectern_controller = true
-				desk_bell = true
-				encased_shaft = true
 				item_hatch = true
+				encased_shaft = true
+				desk_bell = true
 				item_drain = true
 				belt = true
 				backtank = true
 				chassis = true
 				packager = true
-				steam_engine = true
 				gantry_pinion = true
+				steam_engine = true
 				clutch = true
 				pulse_timer = true
 				toolbox = true
@@ -187,8 +187,8 @@
 				package_postbox = true
 				spout = true
 				gearbox = true
-				stockpile_switch = true
 				powered_shaft = true
+				stockpile_switch = true
 				andesite_tunnel = true
 				stock_ticker = true
 				stressometer = true
@@ -298,8 +298,8 @@
 
 			[light_sources.settings.block_entities.create_connected]
 				crank_wheel = true
-				inverted_gearshift = true
 				kinetic_bridge_destination = true
+				inverted_gearshift = true
 				fan_ending_catalyst_dragon_head = true
 				inverted_clutch = true
 				copycat = true
@@ -328,8 +328,8 @@
 			[light_sources.settings.entities.minecraft]
 				zombie_horse = true
 				axolotl = true
-				zoglin = true
 				egg = true
+				zoglin = true
 				spawner_minecart = true
 				allay = true
 				llama = true
@@ -495,6 +495,12 @@
 				falling_lantern = true
 				medium_fireball = true
 				ring_effect_cloud = true
+
+			[light_sources.settings.entities.quark]
+				shiba = true
+				toretoise = true
+				stoneling = true
+				crab = true
 
 			[light_sources.settings.entities.nexuscore]
 				core = true

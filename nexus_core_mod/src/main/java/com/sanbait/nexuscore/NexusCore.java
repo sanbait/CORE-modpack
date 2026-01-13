@@ -28,7 +28,7 @@ public class NexusCore {
     public static final RegistryObject<EntityType<NexusCoreEntity>> NEXUS_CORE = ENTITIES.register("core",
             () -> EntityType.Builder.of(NexusCoreEntity::new, MobCategory.MISC)
                     .sized(1.5f, 3.0f) // Sized for a large crystal/core
-                    .clientTrackingRange(256) // Fix disappearing range (Max chunks)
+                    .clientTrackingRange(64) // FIX FPS: Reduced from 256 to 64 to prevent performance issues on startup
                     .updateInterval(20) // Update every second (less spam)
                     .build("core"));
 
@@ -42,12 +42,8 @@ public class NexusCore {
                         net.minecraft.world.item.context.UseOnContext context) {
                     if (!context.getLevel().isClientSide) {
                         // SINGLETON RULE: Check if one already exists in loaded entities
-                        // Manual AABB covering the world since getBounds is missing
-                        java.util.List<NexusCoreEntity> existing = context.getLevel().getEntitiesOfClass(
-                                NexusCoreEntity.class, new net.minecraft.world.phys.AABB(-30000000.0D, -64.0D,
-                                        -30000000.0D, 30000000.0D, 500.0D, 30000000.0D));
-
-                        if (!existing.isEmpty()) {
+                        // OPTIMIZATION: Use CoreRadiusManager instead of expensive AABB scan
+                        if (com.sanbait.luxsystem.CoreRadiusManager.hasCore(context.getLevel())) {
                             context.getPlayer().displayClientMessage(net.minecraft.network.chat.Component
                                     .translatable("message.nexuscore.core_exist_error"), true);
                             return net.minecraft.world.InteractionResult.FAIL;
@@ -164,6 +160,11 @@ public class NexusCore {
     public static class ForgeEvents {
         @net.minecraftforge.eventbus.api.SubscribeEvent
         public static void onEntityJoinLevel(net.minecraftforge.event.entity.EntityJoinLevelEvent event) {
+            // FIX FPS: Пропускаем обработку если чанк еще не загружен (при загрузке мира)
+            if (!event.getLevel().isLoaded(event.getEntity().blockPosition())) {
+                return; // Чанк еще не загружен, пропускаем
+            }
+
             if (event.getEntity() instanceof net.minecraft.world.entity.monster.Monster monster) {
                 // Prevent Duplicate Goals: Check if we already have a specialized
                 // CoreAttackGoal
@@ -178,6 +179,8 @@ public class NexusCore {
             // State-Based Lighting: Ensure light exists when Core joins level
             if (event.getEntity() instanceof NexusCoreEntity core && !event.getLevel().isClientSide) {
                 com.sanbait.nexuscore.util.ServerLightManager.forceCoreLight(core);
+                // Register Core for Radius Manager (Moved from Tick)
+                com.sanbait.luxsystem.CoreRadiusManager.addCore(core);
             }
         }
 
@@ -240,6 +243,45 @@ public class NexusCore {
                 }
                 if (!hasCore) {
                     player.getInventory().add(new net.minecraft.world.item.ItemStack(CORE_ITEM.get()));
+                }
+            }
+        }
+
+        @net.minecraftforge.eventbus.api.SubscribeEvent
+        public static void onServerTick(net.minecraftforge.event.TickEvent.ServerTickEvent event) {
+            // FIX FPS: Вся логика ядер перенесена на события, а не на tick() каждой сущности
+            if (event.phase == net.minecraftforge.event.TickEvent.Phase.END) {
+                // Обрабатываем все ядра централизованно раз в секунду (каждые 20 тиков)
+                if (event.getServer().getTickCount() % 20 == 0) {
+                    for (net.minecraft.server.level.ServerLevel level : event.getServer().getAllLevels()) {
+                        java.util.List<NexusCoreEntity> cores = level.getEntitiesOfClass(
+                                NexusCoreEntity.class, net.minecraft.world.phys.AABB.ofSize(
+                                        net.minecraft.world.phys.Vec3.ZERO, 30000000, 300, 30000000));
+                        
+                        for (NexusCoreEntity core : cores) {
+                            if (core.isRemoved() || !core.isAlive()) continue;
+                            
+                            // Lux Regeneration (setCurrentLux уже синкает с клиентом)
+                            int genPerTick = core.getCurrentLevel() * NexusCoreConfig.CORE_LUX_GENERATION_PER_LEVEL.get();
+                            int maxLux = core.getCurrentLevel() * NexusCoreConfig.CORE_LUX_CAPACITY_PER_LEVEL.get();
+                            int current = core.getCurrentLux();
+                            if (current < maxLux) {
+                                int next = Math.min(current + genPerTick, maxLux);
+                                core.setCurrentLux(next); // setCurrentLux автоматически синкает с клиентом
+                            }
+                            
+                            // Periodic operations (buffs, charging)
+                            core.performPeriodicOperations();
+                            
+                            // Initialize blocks if needed (only once)
+                            if (!core.blocksInitialized && core.anchorPos != null) {
+                                if (level.isLoaded(core.anchorPos)) {
+                                    core.updateCoreBlocks(0, core.getCurrentLevel());
+                                    core.blocksInitialized = true;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -369,17 +411,15 @@ public class NexusCore {
             // interface now, or we remove it.
             // Let's support the legacy hardcoded items checking too.
 
-            // Check vanilla tags for tools/weapons/armor
-            boolean isVanillaTool = stack.is(net.minecraft.tags.ItemTags.create(
-                    new net.minecraft.resources.ResourceLocation("minecraft", "tools")));
-            boolean isVanillaWeapon = stack.is(net.minecraft.tags.ItemTags.create(
-                    new net.minecraft.resources.ResourceLocation("minecraft", "swords"))) ||
-                    stack.getItem() instanceof net.minecraft.world.item.BowItem ||
-                    stack.getItem() instanceof net.minecraft.world.item.TridentItem ||
-                    stack.getItem() instanceof net.minecraft.world.item.CrossbowItem;
-            boolean isVanillaArmor = stack.getItem() instanceof net.minecraft.world.item.ArmorItem;
+            // Improved Checks using Class Inheritance (Works for modded items too)
+            boolean isTool = stack.getItem() instanceof net.minecraft.world.item.DiggerItem; // Pickaxe, Axe, Shovel, Hoe
+            boolean isWeapon = stack.getItem() instanceof net.minecraft.world.item.SwordItem;
+            boolean isArmor = stack.getItem() instanceof net.minecraft.world.item.ArmorItem;
+            boolean isRanged = stack.getItem() instanceof net.minecraft.world.item.ProjectileWeaponItem; // Bow, Crossbow
+            boolean isShield = stack.getItem() instanceof net.minecraft.world.item.ShieldItem;
+            boolean isTrident = stack.getItem() instanceof net.minecraft.world.item.TridentItem;
 
-            if (isLuxItem || isReceptiveItem(stack) || isVanillaTool || isVanillaWeapon || isVanillaArmor) {
+            if (isLuxItem || isReceptiveItem(stack) || isTool || isWeapon || isArmor || isRanged || isShield || isTrident) {
                 com.sanbait.luxsystem.capabilities.LuxProvider provider = new com.sanbait.luxsystem.capabilities.LuxProvider();
 
                 // Determine Capacity
@@ -510,22 +550,55 @@ public class NexusCore {
 
         @net.minecraftforge.eventbus.api.SubscribeEvent
         public static void registerItemDecorators(net.minecraftforge.client.event.RegisterItemDecorationsEvent event) {
-            // Register decorator for ALL items - confirmed working
-            // DISABLED: Using Vanilla Bar system instead to fix lag issues.
-            /*
-             * for (net.minecraft.world.item.Item item :
-             * net.minecraftforge.registries.ForgeRegistries.ITEMS) {
-             * event.register(item, com.sanbait.nexuscore.client.LuxItemDecorator.INSTANCE);
-             * }
-             */
+            // Register decorator for ALL items - LuxItemDecorator is optimized (uses NBT cache)
+            // Only renders if item has LuxStored NBT tag, avoiding expensive capability lookups
+            for (net.minecraft.world.item.Item item :
+                    net.minecraftforge.registries.ForgeRegistries.ITEMS) {
+                event.register(item, com.sanbait.nexuscore.client.LuxItemDecorator.INSTANCE);
+            }
         }
+
+
     }
 
     // Global static to track state
     public static boolean RENDER_PARTICLES = true;
 
-    @net.minecraftforge.fml.common.Mod.EventBusSubscriber(modid = MODID, value = net.minecraftforge.api.distmarker.Dist.CLIENT)
+    @net.minecraftforge.fml.common.Mod.EventBusSubscriber(modid = MODID, bus = net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus.FORGE, value = net.minecraftforge.api.distmarker.Dist.CLIENT)
     public static class ClientForgeEvents {
+        // FIX FPS: Частицы убраны почти в ноль - спавнятся очень редко (раз в 200 тиков = 10 секунд)
+        private static int clientTickCounter = 0; // Счетчик для частиц
+        
+        @net.minecraftforge.eventbus.api.SubscribeEvent
+        public static void onClientTick(net.minecraftforge.event.TickEvent.ClientTickEvent event) {
+            if (event.phase == net.minecraftforge.event.TickEvent.Phase.END && NexusCore.RENDER_PARTICLES) {
+                net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+                if (mc.level != null && mc.player != null) {
+                    clientTickCounter++;
+                    
+                    // FIX FPS: Increased frequency for visibility (was 200, now 5)
+                    if (clientTickCounter % 5 == 0) {
+                        java.util.List<NexusCoreEntity> cores = mc.level.getEntitiesOfClass(
+                                NexusCoreEntity.class,
+                                mc.player.getBoundingBox().inflate(64)); // Increased range slightly
+                        
+                        // Обрабатываем все ядра рядом
+                        for (NexusCoreEntity core : cores) {
+                            if (core.isRemoved() || !core.isAlive()) continue;
+                            
+                            // Spawn radius particles (multiple to make a ring)
+                            core.spawnRadiusParticles();
+                            
+                            // Glow particles (less frequent)
+                            if (clientTickCounter % 20 == 0) {
+                                core.spawnGlowParticles();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         @net.minecraftforge.eventbus.api.SubscribeEvent
         public static void onKeyInput(net.minecraftforge.client.event.InputEvent.Key event) {
             if (ClientModEvents.TOGGLE_PARTICLES.consumeClick()) {

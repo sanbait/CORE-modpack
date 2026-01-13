@@ -9,8 +9,7 @@
     ],
     "client": [
         "MixinFrustum",
-        "MixinRenderChunk",
-        "MixinLevelRenderer"
+        "MixinRenderChunk"
     ],
     "injectors": {
         "defaultRequire": 1

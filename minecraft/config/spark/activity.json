@@ -5,6 +5,19 @@
       "name": "sunbait",
       "uniqueId": "2a645cbf-55dd-4e91-a25a-4ccae84e6179"
     },
+    "time": 1768241612274,
+    "type": "Profiler",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/hPFk4Myawd"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "sunbait",
+      "uniqueId": "2a645cbf-55dd-4e91-a25a-4ccae84e6179"
+    },
     "time": 1768204878393,
     "type": "Profiler (live)",
     "data": {
