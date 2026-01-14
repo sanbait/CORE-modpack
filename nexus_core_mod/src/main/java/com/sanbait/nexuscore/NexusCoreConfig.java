@@ -23,6 +23,9 @@ public class NexusCoreConfig {
         public static final ForgeConfigSpec.BooleanValue ALLOW_USE_WITHOUT_LUX;
         public static final ForgeConfigSpec.IntValue CORE_LUX_GENERATION_PER_LEVEL;
         public static final ForgeConfigSpec.IntValue CORE_LUX_CAPACITY_PER_LEVEL;
+        
+        // Rendering
+        public static final ForgeConfigSpec.BooleanValue RENDER_BEACON_BEAM;
 
         static {
                 BUILDER.push("Nexus Core Settings");
@@ -131,6 +134,14 @@ public class NexusCoreConfig {
                 CORE_LUX_CAPACITY_PER_LEVEL = BUILDER.comment("Maximum Lux stored per level.")
                                 .defineInRange("coreLuxCapacityPerLevel", 1000, 100, 100000);
 
+                BUILDER.pop();
+
+                BUILDER.push("Rendering Settings");
+                
+                RENDER_BEACON_BEAM = BUILDER.comment(
+                                "Enable or disable the beacon beam visual effect on Nexus Core.")
+                                .define("renderBeaconBeam", true);
+                
                 BUILDER.pop();
 
                 BUILDER.pop();

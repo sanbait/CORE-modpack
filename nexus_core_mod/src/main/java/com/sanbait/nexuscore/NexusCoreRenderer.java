@@ -43,27 +43,29 @@ public class NexusCoreRenderer extends GeoEntityRenderer<NexusCoreEntity> {
             poseStack.popPose();
         }
 
-        // Render Beacon Beam
-        long gameTime = entity.level().getGameTime();
+        // Render Beacon Beam (if enabled in config)
+        if (NexusCoreConfig.RENDER_BEACON_BEAM.get()) {
+            long gameTime = entity.level().getGameTime();
 
-        poseStack.pushPose();
+            poseStack.pushPose();
 
-        // Желтое свечение
-        float[] beamColor = getColorForLevel(entity.getCurrentLevel());
+            // Желтое свечение
+            float[] beamColor = getColorForLevel(entity.getCurrentLevel());
 
-        poseStack.pushPose();
-        // Fix offset: BeaconBeam renders from corner (0,0), Entity renders from center (0.5,0.5)
-        poseStack.translate(-0.5D, 0.0D, -0.5D);
+            poseStack.pushPose();
+            // Fix offset: BeaconBeam renders from corner (0,0), Entity renders from center (0.5,0.5)
+            poseStack.translate(-0.5D, 0.0D, -0.5D);
 
-        // Рендерим луч маяка
-        net.minecraft.client.renderer.blockentity.BeaconRenderer.renderBeaconBeam(poseStack, bufferSource,
-                net.minecraft.client.renderer.blockentity.BeaconRenderer.BEAM_LOCATION,
-                partialTick, 1.0F, gameTime, 0, 1024,
-                beamColor, 0.3F, 0.35F);
+            // Рендерим луч маяка
+            net.minecraft.client.renderer.blockentity.BeaconRenderer.renderBeaconBeam(poseStack, bufferSource,
+                    net.minecraft.client.renderer.blockentity.BeaconRenderer.BEAM_LOCATION,
+                    partialTick, 1.0F, gameTime, 0, 2048,
+                    beamColor, 0.3F, 0.35F);
 
-        poseStack.popPose();
+            poseStack.popPose();
 
-        poseStack.popPose();
+            poseStack.popPose();
+        }
     }
 
     // Получаем цвет для луча в зависимости от уровня

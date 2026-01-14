@@ -24,36 +24,29 @@ public class GridStructurePlacement extends StructurePlacement {
 
     @Override
     protected boolean isPlacementChunk(ChunkGeneratorStructureState structState, int chunkX, int chunkZ) {
-        // Grid Logic:
-        // Sector Size = 512 blocks = 32 chunks.
-        // We want gateways ONLY on the borders of Sector 0:0 (starting zone)
-        // NOT on all borders of all sectors!
+        // Efficient sector size calculation
+        int sectorSizeBlocks = com.sanbait.shadowgrid.world.BiomeGridConfig.SECTOR_SIZE;
+        int chunksPerSector = sectorSizeBlocks >> 4; // / 16
 
-        // Sector 0:0 borders are at:
-        // East: chunkX = 16, chunkZ = 0 (and nearby)
-        // West: chunkX = -16, chunkZ = 0 (and nearby)
-        // South: chunkX = 0, chunkZ = 16 (and nearby)
-        // North: chunkX = 0, chunkZ = -16 (and nearby)
+        // Ensure valid size (must be at least 1 chunk)
+        if (chunksPerSector < 1)
+            chunksPerSector = 1;
 
-        // Генерируем маяки НА КАЖДОЙ границе каждого сектора
-        // Сектор 32x32 чанка. Границы проходят через каждые 32 чанка.
-        // Центр стены - это середина границы (offset 16)
+        int halfChunks = chunksPerSector / 2;
+        int borderInner = halfChunks - 1; // e.g., 3 for size 8
+        int borderOuter = halfChunks; // e.g., 4 for size 8
 
-        // У нас есть 2 типа стен:
-        // 1. Вертикальные (вдоль Z): X % 32 == 16, Z % 32 == 0 (центр)
-        // 2. Горизонтальные (вдоль X): Z % 32 == 16, X % 32 == 0 (центр)
+        // Calculate position within sector
+        int modX = Math.floorMod(chunkX, chunksPerSector);
+        int modZ = Math.floorMod(chunkZ, chunksPerSector);
 
-        // Используем Math.floorMod для корректной работы с отрицательными координатами
-        int modX = Math.floorMod(chunkX, 32);
-        int modZ = Math.floorMod(chunkZ, 32);
+        // Gateway on Vertical Wall (East/West)
+        // Must be at the border X (inner or outer chunk) AND center Z (chunk 0)
+        boolean isVerticalWall = (modX == borderInner || modX == borderOuter) && modZ == 0;
 
-        // Маяк на вертикальной стене (Восток/Запад) - строго на 15 чанке
-        // В GatewayPiece мы сдвинем его на край чанка (x=15), чтобы он встал ровно в
-        // стену.
-        boolean isVerticalWall = (modX == 15 && modZ == 0);
-
-        // Маяк на горизонтальной стене (Север/Юг) - строго на 15 чанке
-        boolean isHorizontalWall = (modZ == 15 && modX == 0);
+        // Gateway on Horizontal Wall (North/South)
+        // Must be center X (chunk 0) AND border Z (inner or outer chunk)
+        boolean isHorizontalWall = (modZ == borderInner || modZ == borderOuter) && modX == 0;
 
         return isVerticalWall || isHorizontalWall;
 

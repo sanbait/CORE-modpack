@@ -48,8 +48,13 @@ public class GatewayPiece extends StructurePiece {
 
         int chunkX = chunkPos.x;
         int chunkZ = chunkPos.z;
-        int modX = Math.floorMod(chunkX, 32);
-        int modZ = Math.floorMod(chunkZ, 32);
+        int SECTOR_SIZE = com.sanbait.shadowgrid.world.BiomeGridConfig.SECTOR_SIZE;
+        int chunksPerSector = SECTOR_SIZE >> 4; // 8 for size 128
+        int borderInner = (chunksPerSector / 2) - 1; // 3
+        int borderOuter = chunksPerSector / 2; // 4
+
+        int modX = Math.floorMod(chunkX, chunksPerSector);
+        int modZ = Math.floorMod(chunkZ, chunksPerSector);
 
         int surfaceY = this.boundingBox.minY();
         int chunkMinX = chunkPos.getMinBlockX();
@@ -59,28 +64,28 @@ public class GatewayPiece extends StructurePiece {
         int startX = chunkMinX + 7;
         int startZ = chunkMinZ + 7;
 
-        // Если это вертикальная стена (mod 15) -> сдвигаем вправо на x+11 (3 блока от
-        // края 16)
-        if (modX == 15) {
-            startX = chunkMinX + 11;
+        // Если это вертикальная стена (modInner) -> сдвигаем вправо на x+13 (Вплотную к
+        // внешней границе чанка)
+        if (modX == borderInner) {
+            startX = chunkMinX + 13;
             startZ = chunkMinZ + 7;
         }
-        // Если это ВНЕШНЯЯ сторона (mod 16) -> сдвигаем влево на x+2 (2 блока от края
-        // 0)
-        else if (modX == 16) {
-            startX = chunkMinX + 2;
+        // Если это ВНЕШНЯЯ сторона (modOuter) -> сдвигаем влево на x+0 (Вплотную к
+        // внутренней границе чанка)
+        else if (modX == borderOuter) {
+            startX = chunkMinX + 0;
             startZ = chunkMinZ + 7;
         }
 
-        // Если это горизонтальная стена (mod 15) -> сдвигаем вниз на z+11
-        else if (modZ == 15) {
+        // Если это горизонтальная стена (modInner) -> сдвигаем вниз на z+13
+        else if (modZ == borderInner) {
             startX = chunkMinX + 7;
-            startZ = chunkMinZ + 11;
+            startZ = chunkMinZ + 13;
         }
-        // Внешняя сторона (mod 16) -> сдвигаем вверх на z+2
-        else if (modZ == 16) {
+        // Внешняя сторона (modOuter) -> сдвигаем вверх на z+0
+        else if (modZ == borderOuter) {
             startX = chunkMinX + 7;
-            startZ = chunkMinZ + 2;
+            startZ = chunkMinZ + 0;
         }
 
         // Обновляем startX/startZ для цикла генерации (переопределяем локальные

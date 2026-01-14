@@ -5,7 +5,10 @@
     "compatibilityLevel": "JAVA_17",
     "refmap": "mixins.shadowgrid.refmap.json",
     "mixins": [
-        "MixinMultiNoiseBiomeSource"
+        "MixinMultiNoiseBiomeSource",
+        "MixinCheckerboardBiomeSource",
+        "MixinNoiseBasedBiomeSource",
+        "MixinChunkGenerator"
     ],
     "client": [
         "MixinFrustum",

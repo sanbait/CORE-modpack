@@ -1,0 +1,22 @@
+{
+  "id": "Смерть-23-09-05-01-13-2026_210-32-396",
+  "name": "Смерть 23:09:05 01-13-2026",
+  "icon": "journeymap:ui/img/waypoint-death-icon.png",
+  "colorizedIcon": "fake:color--11024077-waypoint-death-icon.png",
+  "x": 210,
+  "y": 32,
+  "z": 396,
+  "r": 87,
+  "g": 201,
+  "b": 51,
+  "enable": true,
+  "type": "Death",
+  "origin": "journeymap",
+  "dimensions": [
+    "deeperdarker:otherside"
+  ],
+  "persistent": true,
+  "showDeviation": false,
+  "iconColor": -1,
+  "customIconColor": false
+}

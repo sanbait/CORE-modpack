@@ -114,7 +114,7 @@ _version = 3
 	[common.multiThreading]
 		#
 		# How many threads should be used by Distant Horizons?
-		numberOfThreads = 2
+		numberOfThreads = 12
 		#
 		# A value between 1.0 and 0.0 that represents the percentage 
 		# of time each thread can run before going idle. 
@@ -260,7 +260,7 @@ _version = 3
 		#  outside the vanilla render distance? 
 		# Depending on the generator mode, this will import existing chunks 
 		# and/or generating missing chunks.
-		enableDistantGeneration = false
+		enableDistantGeneration = true
 		#
 		# The center X chunk position that the world gen max radius is centered around.
 		generationCenterChunkX = 0
@@ -304,7 +304,7 @@ _version = 3
 			# DEFAULT: Default lod renderer 
 			# DEBUG: Debug testing renderer 
 			# DISABLED: Disable rendering
-			rendererMode = "DISABLED"
+			rendererMode = "DEFAULT"
 			#
 			# If enabled the LODs will render as wireframe.
 			renderWireframe = false
@@ -573,7 +573,7 @@ _version = 3
 			[client.advanced.graphics.genericRendering]
 				#
 				# If true LOD clouds will be rendered.
-				enableCloudRendering = false
+				enableCloudRendering = true
 				#
 				# Sets the maximum height at which beacons will render.This will only affect new beacons coming into LOD render distance.Beacons currently visible in LOD chunks will not be affected.
 				beaconRenderHeight = 6000
@@ -650,7 +650,7 @@ _version = 3
 				blocksToIgnore = "NON_COLLIDING"
 				#
 				# The radius of the mod's render distance. (measured in chunks)
-				lodChunkRenderDistanceRadius = 256
+				lodChunkRenderDistanceRadius = 128
 				#
 				# What value should vanilla Minecraft's texture LodBias be? 
 				# If set to 0 the mod wont overwrite vanilla's default (which so happens to also be 0)
@@ -700,7 +700,7 @@ _version = 3
 				#
 				# Should Minecraft's fog render? 
 				# Note: Other mods may conflict with this setting.
-				enableVanillaFog = true
+				enableVanillaFog = false
 				#
 				# What is the maximum fog thickness? 
 				# 

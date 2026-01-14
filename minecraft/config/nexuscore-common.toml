@@ -45,3 +45,7 @@
 		#Allow using tools/weapons without Lux (true = works without Lux, false = requires Lux).
 		allowUseWithoutLux = true
 
+	["Nexus Core Settings"."Rendering Settings"]
+		#Enable or disable the beacon beam visual effect on Nexus Core.
+		renderBeaconBeam = true
+

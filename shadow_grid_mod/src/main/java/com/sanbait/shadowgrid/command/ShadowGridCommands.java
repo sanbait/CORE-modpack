@@ -24,6 +24,13 @@ public class ShadowGridCommands {
                                             context.getSource().sendSuccess(
                                                     () -> Component.literal("Unlocked Sector: " + x + ":" + z), true);
                                             return 1;
-                                        })))));
+                                        }))))
+                .then(Commands.literal("reloadbiomes")
+                        .executes(context -> {
+                            com.sanbait.shadowgrid.world.BiomeGridConfig.reloadConfig();
+                            context.getSource().sendSuccess(
+                                    () -> Component.literal("Reloaded biome config from disk"), true);
+                            return 1;
+                        })));
     }
 }
