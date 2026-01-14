@@ -1,0 +1,32 @@
+{
+    "dimStack": [
+        {
+            "dimensionId": "minecraft:overworld",
+            "scale": 1.0,
+            "flipped": false,
+            "horizontalRotation": 0.0,
+            "topY": 320,
+            "bottomY": -55,
+            "bedrockReplacement": "minecraft:air"
+        },
+        {
+            "dimensionId": "minecraft:the_nether",
+            "scale": 1.0,
+            "flipped": false,
+            "horizontalRotation": 0.0,
+            "topY": 128,
+            "bottomY": 0,
+            "bedrockReplacement": "minecraft:air"
+        },
+        {
+            "dimensionId": "deeperdarker:otherside",
+            "scale": 1.0,
+            "flipped": false,
+            "horizontalRotation": 0.0,
+            "topY": 128,
+            "bottomY": 0,
+            "bedrockReplacement": "minecraft:air"
+        }
+    ],
+    "loop": false
+}

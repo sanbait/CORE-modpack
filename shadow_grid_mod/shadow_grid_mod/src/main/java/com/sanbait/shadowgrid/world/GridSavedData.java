@@ -24,6 +24,11 @@ public class GridSavedData extends SavedData {
 
     public static GridSavedData get(Level level) {
         if (level instanceof ServerLevel serverLevel) {
+            // ALWAYS use the Overworld storage for global syncing
+            ServerLevel overworld = serverLevel.getServer().getLevel(Level.OVERWORLD);
+            if (overworld != null) {
+                return overworld.getDataStorage().computeIfAbsent(GridSavedData::load, GridSavedData::new, DATA_NAME);
+            }
             return serverLevel.getDataStorage().computeIfAbsent(GridSavedData::load, GridSavedData::new, DATA_NAME);
         }
         return new GridSavedData(); // Fallback for client (client doesn't save)
@@ -37,15 +42,15 @@ public class GridSavedData extends SavedData {
         String sectorKey = x + ":" + z;
         if (unlockedSectors.add(sectorKey)) {
             setDirty();
-            
+
             // Барьеры через поле - не нужно удалять физические блоки!
-            
+
             // Sync to all players immediately - CRITICAL for client to update!
             com.sanbait.shadowgrid.network.ShadowNetwork
                     .sendToAll(new com.sanbait.shadowgrid.network.PacketSyncGrid(getUnlockedSectors()));
         }
     }
-    
+
     // Перегрузка для обратной совместимости
     public void unlockSector(int x, int z) {
         unlockSector(x, z, null);
@@ -63,6 +68,7 @@ public class GridSavedData extends SavedData {
         for (Tag t : list) {
             data.unlockedSectors.add(t.getAsString());
         }
+
         return data;
     }
 

@@ -1,0 +1,12 @@
+{
+    "structures": [
+        {
+            "structure": "shadowgrid:gateway",
+            "weight": 1
+        }
+    ],
+    "placement": {
+        "type": "shadowgrid:grid_placement",
+        "salt": 16451325
+    }
+}

@@ -1,0 +1,7 @@
+{
+    "block.luxsystem.lux_charger": "Зарядник Люкса",
+    "item.luxsystem.liquid_lux_bucket": "Ведро Жидкого Люкса",
+    "item.luxsystem.lux_crystal": "Кристалл Люкса",
+    "container.luxsystem.lux_charger": "Зарядник Люкса",
+    "jei.luxsystem.charger_info": "Зарядник Люкса быстро заряжает предметы кристаллами. Положите предметы в слоты (до 9 стаков) и кристаллы Люкса в специальный слот. 1 кристалл = 1000 Lux. Зарядка происходит автоматически."
+}

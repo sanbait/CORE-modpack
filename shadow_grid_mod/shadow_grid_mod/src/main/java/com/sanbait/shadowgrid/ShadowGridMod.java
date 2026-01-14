@@ -9,6 +9,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 @Mod(ShadowGridMod.MODID)
 public class ShadowGridMod {
     public static final String MODID = "shadowgrid";
+    public static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
 
     public ShadowGridMod() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -16,6 +17,9 @@ public class ShadowGridMod {
         // Register Content
         com.sanbait.shadowgrid.registry.ModBlocks.register(modEventBus);
         com.sanbait.shadowgrid.registry.ModStructures.register(modEventBus);
+
+        // Register Config
+        com.sanbait.shadowgrid.config.GatewayConfig.register();
 
         // Register network in common setup (runs on both client and server)
         modEventBus.addListener(this::commonSetup);

@@ -1,0 +1,7 @@
+{
+    "block.luxsystem.lux_charger": "Lux Charger",
+    "item.luxsystem.liquid_lux_bucket": "Liquid Lux Bucket",
+    "item.luxsystem.lux_crystal": "Lux Crystal",
+    "container.luxsystem.lux_charger": "Lux Charger",
+    "jei.luxsystem.charger_info": "Lux Charger quickly charges items with crystals. Place items in slots (up to 9 stacks) and Lux crystals in the special slot. 1 crystal = 1000 Lux. Charging happens automatically."
+}

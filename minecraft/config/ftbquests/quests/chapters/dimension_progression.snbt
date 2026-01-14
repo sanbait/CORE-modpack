@@ -1,0 +1,65 @@
+{
+	default_hide_dependency_lines: false
+	default_quest_shape: ""
+	filename: "dimension_progression"
+	group: ""
+	icon: "minecraft:nether_star"
+	id: "5A1B2C3D4E5F6A7B"
+	order_index: 1
+	quest_links: [ ]
+	quests: [
+		{
+			icon: "minecraft:netherrack"
+			id: "15C772BCED24339D"
+			rewards: [{
+				command: "/gamestage add @p unlock_nether"
+				id: "6055A746E3BBA6CD"
+				type: "command"
+			}]
+			tasks: [{
+				count: 10L
+				id: "15253C987DAC6E44"
+				item: "minecraft:obsidian"
+				type: "item"
+			}]
+			title: "Разблокировать Ад"
+			x: 0.0d
+			y: 0.0d
+		}
+		{
+			icon: "deeperdarker:sculk_stone"
+			id: "6D7848AE9084EBC7"
+			rewards: [{
+				command: "/gamestage add @p unlock_deep_dark"
+				id: "5A1F280C76EE15C8"
+				type: "command"
+			}]
+			tasks: [{
+				dimension: "minecraft:the_nether"
+				id: "667A643477AA7FB7"
+				type: "dimension"
+			}]
+			title: "Разблокировать Deep Dark"
+			x: 0.0d
+			y: 2.0d
+		}
+		{
+			icon: "minecraft:end_stone"
+			id: "3F0B91E6D8476B10"
+			rewards: [{
+				command: "/gamestage add @p unlock_end"
+				id: "4E11FC64DECE3FFD"
+				type: "command"
+			}]
+			tasks: [{
+				dimension: "deeperdarker:otherside"
+				id: "2B76ED5F20228743"
+				type: "dimension"
+			}]
+			title: "Разблокировать Край"
+			x: 0.0d
+			y: 4.0d
+		}
+	]
+	title: "Измерения: Прогрессия"
+}

@@ -14,22 +14,34 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo 2. Installing to Mods folder...
-echo Using path: ..\minecraft\mods\nexus_core-*.jar
-
-:: Attempt delete
-del /q "..\minecraft\mods\nexus_core-*.jar" 2>nul
-if exist "..\minecraft\mods\nexus_core-*.jar" (
-    echo.
-    echo [WARNING] Could not delete old mod jar! 
-    echo Is the game running? CLOSE THE GAME and try again.
-    pause
-    exit /b 1
-)
-
-copy /Y "build\libs\nexus_core-*.jar" "..\minecraft\mods\"
+echo.
+echo ===================================================
+echo   PHASE 2: SHADOW GRID UPDATE
+echo ===================================================
+echo.
+cd ..\shadow_grid_mod\shadow_grid_mod
+echo Building Shadow Grid...
+call gradlew.bat clean build --no-daemon
 if %errorlevel% neq 0 (
-    echo.
+    echo [ERROR] Shadow Grid build failed!
+    pause
+    exit /b %errorlevel%
+)
+cd ..\..\nexus_core_mod
+
+echo.
+echo ===================================================
+echo   PHASE 3: DEPLOYMENT
+echo ===================================================
+echo Removing old jars...
+del /q "..\minecraft\mods\nexus_core-*.jar" 2>nul
+del /q "..\minecraft\mods\shadow_grid-*.jar" 2>nul
+
+echo Installing new versions...
+copy /Y "build\libs\nexus_core-*.jar" "..\minecraft\mods\"
+copy /Y "..\shadow_grid_mod\shadow_grid_mod\build\libs\shadow_grid-*.jar" "..\minecraft\mods\"
+
+if %errorlevel% neq 0 (
     echo [ERROR] Copy failed!
     pause
     exit /b 1
@@ -37,7 +49,6 @@ if %errorlevel% neq 0 (
 
 echo.
 echo ===================================================
-echo [SUCCESS] Mod updated! 
-echo You can now launch the game in Prism Launcher.
+echo [SUCCESS] ALL MODS UPDATED!
 echo ===================================================
 pause

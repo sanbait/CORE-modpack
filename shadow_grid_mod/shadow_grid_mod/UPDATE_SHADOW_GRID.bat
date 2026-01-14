@@ -22,7 +22,14 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo [3/3] Deploying to Mods folder...
-copy "build\libs\shadow_grid-1.0.0.jar" "..\..\minecraft\mods\" /Y
+echo Removing old versions...
+if exist "..\..\minecraft\mods\shadow_grid-*.jar" (
+    del /q "..\..\minecraft\mods\shadow_grid-*.jar"
+)
+
+echo Copying new build...
+copy "build\libs\shadow_grid-*.jar" "..\..\minecraft\mods\" /Y
+
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Copy Failed!
     pause
@@ -30,7 +37,6 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
-echo [SUCCESS] Shadow Grid Mod Installed!
-echo Location: minecraft/mods/shadow_grid-1.0.0.jar
+echo [SUCCESS] Shadow Grid Mod Updated!
 echo.
 pause

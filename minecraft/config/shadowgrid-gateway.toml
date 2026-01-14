@@ -1,0 +1,20 @@
+
+#Gateway Unlock Configuration
+[gateway]
+	#Item ID for unlocking gateways (e.g., 'luxsystem:lux_crystal')
+	currencyItem = "luxsystem:lux_crystal"
+	#Cost for unlocking the FIRST additional sector
+	#Range: > 0
+	baseCost1 = 10
+	#Cost for unlocking the SECOND additional sector
+	#Range: > 0
+	baseCost2 = 50
+	#Cost for unlocking the THIRD additional sector
+	#Range: > 0
+	baseCost3 = 100
+	#Base cost for FOURTH sector onwards (doubles each time: 200, 400, 800, ...)
+	#Range: > 0
+	baseCost4Plus = 200
+	#Enable debug messages in chat when activating gateways
+	debugMode = false
+
