@@ -36,11 +36,17 @@ public class PacketSyncGrid {
             // Use DistExecutor to safely run client-side code
             net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT,
                     () -> () -> {
+                        System.out.println("[ShadowGrid] PacketSyncGrid received with " + this.unlockedSectors.size()
+                                + " unlocked sectors");
                         ClientGridData.setUnlockedSectors(this.unlockedSectors);
-                        // Force re-render of chunks to ensure visibility updates (fixes Bobby/Distant
-                        // Horizons issues)
-                        if (net.minecraft.client.Minecraft.getInstance().levelRenderer != null) {
-                            net.minecraft.client.Minecraft.getInstance().levelRenderer.allChanged();
+
+                        // Force RELOAD of chunks (not just re-render)
+                        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+                        if (mc.level != null && mc.levelRenderer != null) {
+                            System.out.println("[ShadowGrid] Forcing chunk reload...");
+                            // Reload all chunks to force server to resend them
+                            mc.levelRenderer.allChanged();
+                            mc.levelRenderer.needsUpdate();
                         }
                     });
         });

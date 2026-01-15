@@ -1,94 +1,82 @@
-# Shadow Grid Mod - Official Documentation
+# Shadow Grid Mod - Documentation
 
-**Version:** 0.0.1 (Alpha)
-**Dependencies:** Nexus Core (Optional, for unlocking currency), GeckoLib, Curios
+## Overview
 
-**Last Updated:** January 2026
-
----
-
-## 🌎 Overview
-
-**Shadow Grid** transforms the world into a strictly partitioned grid of **Sectors**.
-
-* The world is divided into **512x512 block Sectors**.
-* Only the **Central Sector (0:0)** is unlocked at the start.
-* The rest of the world is locked in **Shadow** (Visually hidden by Fog and Particle Walls).
-* Players must physically unlock adjacent sectors to expand the playable area.
+This mod implements a grid-based progression system where the Minecraft world is divided into 256x256 block sectors. Players start in a central safe zone and must unlock adjacent sectors using resources (Lux Crystals).
 
 ---
 
-## 🧩 The Grid System
+## Features
 
-### 1. Sectors
+### 1. Global Grid System
 
-* **Size:** 512 x 512 blocks.
-* **Coordinates:** Represented as `X:Z` (e.g., `0:0`, `1:0`, `0:-1`).
-* **Border:** A visual particle wall separates Unlocked sectors from Locked ones.
+- **Description**: The Overworld is mathematically divided into square sectors of 256x256 blocks.
+- **Logic**:
+  - Coordinate `0,0` is the center of the initial sector (Sector `0:0`).
+  - Borders are strictly aligned to chunk boundaries (16 chunks per sector).
+- **Technical**:
+  - Defined in `BiomeGridConfig.SECTOR_SIZE = 256`.
+  - Sector coordinates are calculated as `floorDiv((blockPos + HALF_SIZE) / SECTOR_SIZE)`.
 
-### 2. Biomes per Sector
+### 2. Sector Locking & Persistence
 
-Each sector can have a distinct biome assigned to it, creating a "Patchwork" world.
+- **Description**: All sectors except the starting one (`0:0`) are initially "Locked". Locked sectors cannot be entered or seen.
+- **Logic**:
+  - Server maintains a list of unlocked sector IDs (e.g., "0:0", "1:0").
+  - Data is saved to the world file (`shadow_grid_data.dat`).
+  - Synced to all connected clients on join and upon any update.
+- **Technical**:
+  - `GridSavedData` (extends `SavedData`) handles server-side storage and NBT serialization.
+  - `PacketSyncGrid` sends the `Set<String>` of unlocked sectors to `ClientGridData` on the client.
 
-* **0:0 (Start):** Default World Generation (Forest/Plains mix).
-* **North (0:-1):** Ice Spikes.
-* **South (0:1):** Desert.
-* **East (1:0):** Jungle.
-* **West (-1:0):** Badlands.
-*(More configurations available in `BiomeGridConfig.java`)*
+### 3. Proximity Unlock System
 
-### 3. Visual Occlusion
+- **Description**: Players can unlock adjacent sectors by approaching the border and paying a cost.
+- **Logic**:
+  - When a player is within **8 blocks** of a locked sector's border, an Action Bar prompt appears: `[Sneak + Right Click] Unlock...`.
+  - Holding `Shift` (Sneak) + `Right Click` (on air, block, or with item) triggers the unlock.
+  - Cost scales with progress: 10 -> 50 -> 100 -> 200... Lux Crystals.
+- **Technical**:
+  - `BorderUnlockHandler`:
+    - `PlayerTickEvent`: Checks distance to nearest border every 10 ticks.
+    - `PlayerInteractEvent` (RightClickItem/Block/Empty): Handles the unlock trigger.
+    - Deducts items from inventory and calls `GridSavedData.unlockSector()`.
 
-To create a true "Fog of War" effect:
+### 4. Chunk Protection (Client Side)
 
-* **Particle Walls:** A dense wall of particles appears at the border of the unlocked region.
-* **Black Fog:** If a player crosses into a locked sector (via cheating or glitching), they are blinded by thick black fog.
+- **Description**: Chunks belonging to locked sectors are completely prevented from loading or rendering on the client.
+- **Logic**:
+  - Before a chunk is created or processed by the client, the mod checks if its coordinates belong to an unlocked sector.
+  - If locked, the chunk source returns `null` or an empty chunk.
+- **Technical**:
+  - `MixinClientChunkCache` injects into `getChunk`.
+  - Queries `ClientGridData.isChunkUnlocked(x, z)`.
+  - Effectively masks the world beyond the unlocked territory.
 
----
+### 5. Visual Barriers (Particle Walls)
 
-## 🔓 Unlocking Regions
+- **Description**: A visual boundary made of particles appears at the edges between unlocked and locked sectors.
+- **Logic**:
+  - The client scans generic range around the player.
+  - Generates particles at `y` levels around the player if `x` or `z` aligns with a sector border AND the adjacent sector is locked.
+- **Technical**:
+  - `ParticleBorderHandler` subscribes to `RenderLevelStageEvent`.
+  - Uses `ClientGridData` to determine where walls should be drawn.
 
-You cannot simply walk into a new region. You must **pay** to unlock it.
+### 6. Void Fog (Occlusion)
 
-### 1. The Gateway
+- **Description**: Dense black fog covers locked areas to hide the void/unloaded chunks.
+- **Logic**:
+  - If a player somehow enters a locked area (or looks into it), the fog density is set to maximum (100% black).
+- **Technical**:
+  - `FogHandler` subscribes to `ViewportEvent.RenderFog` and `ComputeFogColor`.
+  - Checks `ClientGridData.isSectorUnlocked` for the camera position.
 
-* **Structure:** Ancient Gateway blocks spawn (or are placed) at the borders of sectors (center of the 512-block edge).
-* **Interaction:** Right-click the Gateway block to attempt an unlock.
+### 7. Biome Overrides (Structure Integ.)
 
-### 2. Cost System (Lux Crystals)
-
-Unlocking requires **Lux Crystals** (from the **Nexus Core** mod).
-The cost increases progressively based on how many regions you have already unlocked:
-
-| Unlock Order | Cost |
-| :--- | :--- |
-| **1st Unlock** | 10 Crystals |
-| **2nd Unlock** | 50 Crystals |
-| **3rd Unlock** | 100 Crystals |
-| **4th Unlock** | 200 Crystals |
-| **5th+ Unlock** | 200 * 2^(n-3) (Doubles each time: 400, 800, etc.) |
-
-### 3. Interaction Logic
-
-1. Hold **Lux Crystals** in your inventory.
-2. Right-click the **Gateway**.
-3. If you have enough crystals, they are consumed, and the adjacent sector is permanently unlocked for everyone on the server.
-4. The particle wall dissolves, revealing the new land.
-
----
-
-## ⚙️ Configuration & Commands
-
-### Admin Commands
-
-* `/shadowgrid unlock <x> <z>` - Instantly unlock a specific sector (Admin only).
-  * Example: `/shadowgrid unlock 1 0` unlocks the East sector.
-
-### Technical Details
-
-* **Data Storage:** Unlocked sectors are saved in `shadow_grid_data` (World Saved Data).
-* **Sync:** Data is synchronized to clients on login and on update to ensure borders render correctly.
-
----
-
-*Maintained by: Entropy Core Dev Team*
+- **Description**: Biomes are fixed per sector to ensure logical progression and prevent abrupt biome cuts mid-structure (legacy/planned feature).
+- **Logic**:
+  - The mod intercepts biome generation to force a single biome ID for the entire 256x256 area.
+- **Technical**:
+  - `BiomeGridConfig` stores the biome map.
+  - (Note: Implementation details vary based on active Mixin/Datapack approach).

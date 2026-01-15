@@ -1,0 +1,17 @@
+{
+    "required": true,
+    "minVersion": "0.8",
+    "package": "com.sanbait.shadowgrid.mixin",
+    "compatibilityLevel": "JAVA_17",
+    "refmap": "mixins.shadowgrid.refmap.json",
+    "mixins": [
+        "MixinMultiNoiseBiomeSource",
+        "MixinChunkGenerator"
+    ],
+    "client": [
+        "MixinNetherPortalBlock"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

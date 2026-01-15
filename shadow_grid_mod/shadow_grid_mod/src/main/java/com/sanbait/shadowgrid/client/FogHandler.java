@@ -2,12 +2,8 @@ package com.sanbait.shadowgrid.client;
 
 import com.sanbait.shadowgrid.ShadowGridMod;
 import com.sanbait.shadowgrid.world.BiomeGridConfig;
-import com.sanbait.shadowgrid.world.GridSavedData;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -22,9 +18,9 @@ public class FogHandler {
             return;
         }
 
-        // В закрытом секторе - густой туман
+        // В закрытом секторе - густой туман (слепота)
         event.setNearPlaneDistance(0.0f);
-        event.setFarPlaneDistance(15.0f);
+        event.setFarPlaneDistance(5.0f);
         event.setCanceled(true); // Отменяем ванильный туман
     }
 

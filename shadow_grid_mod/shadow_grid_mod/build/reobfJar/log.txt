@@ -134,15 +134,9 @@ Adding Libraries to Inheritance
 Reading Input: C:\Users\sanba\AppData\Roaming\PrismLauncher\instances\CORE\shadow_grid_mod\shadow_grid_mod\build\libs\shadow_grid-1.1.0.jar
 Adding input to inheritance map
 Processing entries
-Conflicting propagated mapping for com/sanbait/shadowgrid/world/structure/GatewayStructure/findGenerationPoint(Lnet/minecraft/world/level/levelgen/structure/Structure$GenerationContext;)Ljava/util/Optional; from net/minecraft/world/level/levelgen/structure/Structure/findGenerationPoint(Lnet/minecraft/world/level/levelgen/structure/Structure$GenerationContext;)Ljava/util/Optional;: findGenerationPoint -> m_214086_
-Conflicting propagated mapping for com/sanbait/shadowgrid/world/structure/GatewayStructure/type()Lnet/minecraft/world/level/levelgen/structure/StructureType; from net/minecraft/world/level/levelgen/structure/Structure/type()Lnet/minecraft/world/level/levelgen/structure/StructureType;: type -> m_213658_
-Conflicting propagated mapping for com/sanbait/shadowgrid/world/structure/GridStructurePlacement/type()Lnet/minecraft/world/level/levelgen/structure/placement/StructurePlacementType; from net/minecraft/world/level/levelgen/structure/placement/StructurePlacement/type()Lnet/minecraft/world/level/levelgen/structure/placement/StructurePlacementType;: type -> m_203443_
-Conflicting propagated mapping for com/sanbait/shadowgrid/world/structure/GridStructurePlacement/isPlacementChunk(Lnet/minecraft/world/level/chunk/ChunkGeneratorStructureState;II)Z from net/minecraft/world/level/levelgen/structure/placement/StructurePlacement/isPlacementChunk(Lnet/minecraft/world/level/chunk/ChunkGeneratorStructureState;II)Z: isPlacementChunk -> m_214090_
-Conflicting propagated mapping for com/sanbait/shadowgrid/world/structure/piece/GatewayPiece/postProcess(Lnet/minecraft/world/level/WorldGenLevel;Lnet/minecraft/world/level/StructureManager;Lnet/minecraft/world/level/chunk/ChunkGenerator;Lnet/minecraft/util/RandomSource;Lnet/minecraft/world/level/levelgen/structure/BoundingBox;Lnet/minecraft/world/level/ChunkPos;Lnet/minecraft/core/BlockPos;)V from net/minecraft/world/level/levelgen/structure/StructurePiece/postProcess(Lnet/minecraft/world/level/WorldGenLevel;Lnet/minecraft/world/level/StructureManager;Lnet/minecraft/world/level/chunk/ChunkGenerator;Lnet/minecraft/util/RandomSource;Lnet/minecraft/world/level/levelgen/structure/BoundingBox;Lnet/minecraft/world/level/ChunkPos;Lnet/minecraft/core/BlockPos;)V: postProcess -> m_213694_
-Conflicting propagated mapping for com/sanbait/shadowgrid/world/structure/piece/GatewayPiece/addAdditionalSaveData(Lnet/minecraft/world/level/levelgen/structure/pieces/StructurePieceSerializationContext;Lnet/minecraft/nbt/CompoundTag;)V from net/minecraft/world/level/levelgen/structure/StructurePiece/addAdditionalSaveData(Lnet/minecraft/world/level/levelgen/structure/pieces/StructurePieceSerializationContext;Lnet/minecraft/nbt/CompoundTag;)V: addAdditionalSaveData -> m_183620_
 Conflicting propagated mapping for com/sanbait/shadowgrid/world/block/GatewayBlock/animateTick(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/util/RandomSource;)V from net/minecraft/world/level/block/Block/animateTick(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/util/RandomSource;)V: animateTick -> m_214162_
-Conflicting propagated mapping for com/sanbait/shadowgrid/world/GridSavedData/save(Lnet/minecraft/nbt/CompoundTag;)Lnet/minecraft/nbt/CompoundTag; from net/minecraft/world/level/saveddata/SavedData/save(Lnet/minecraft/nbt/CompoundTag;)Lnet/minecraft/nbt/CompoundTag;: save -> m_7176_
 Conflicting propagated mapping for com/sanbait/shadowgrid/world/block/GatewayBlock/use(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/phys/BlockHitResult;)Lnet/minecraft/world/InteractionResult; from net/minecraft/world/level/block/state/BlockBehaviour/use(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/phys/BlockHitResult;)Lnet/minecraft/world/InteractionResult;: use -> m_6227_
+Conflicting propagated mapping for com/sanbait/shadowgrid/world/GridSavedData/save(Lnet/minecraft/nbt/CompoundTag;)Lnet/minecraft/nbt/CompoundTag; from net/minecraft/world/level/saveddata/SavedData/save(Lnet/minecraft/nbt/CompoundTag;)Lnet/minecraft/nbt/CompoundTag;: save -> m_7176_
 Conflicting propagated mapping for net/minecraft/world/entity/LivingEntity/lambda$addAdditionalSaveData$3(Lnet/minecraft/nbt/CompoundTag;Lnet/minecraft/nbt/Tag;)V from net/minecraft/world/entity/player/Player/lambda$addAdditionalSaveData$3(Lnet/minecraft/nbt/CompoundTag;Lnet/minecraft/nbt/Tag;)V: lambda$addAdditionalSaveData$3 -> m_219754_
 Adding extras
 Sorting
@@ -168,17 +162,17 @@ Writing Output: C:\Users\sanba\AppData\Roaming\PrismLauncher\instances\CORE\shad
   com/sanbait/shadowgrid/ShadowGridMod.class
   com/sanbait/shadowgrid/client/
   com/sanbait/shadowgrid/client/ClientGridData.class
+  com/sanbait/shadowgrid/client/FogHandler.class
   com/sanbait/shadowgrid/client/ParticleBorderHandler.class
   com/sanbait/shadowgrid/command/
   com/sanbait/shadowgrid/command/ShadowGridCommands.class
-  com/sanbait/shadowgrid/config/
-  com/sanbait/shadowgrid/config/GatewayConfig.class
   com/sanbait/shadowgrid/event/
-  com/sanbait/shadowgrid/event/GatewayHandler.class
+  com/sanbait/shadowgrid/event/BorderUnlockHandler.class
+  com/sanbait/shadowgrid/event/ChunkVisibilityHandler.class
   com/sanbait/shadowgrid/event/ShadowGridEvents.class
   com/sanbait/shadowgrid/mixin/
   com/sanbait/shadowgrid/mixin/MixinBiomeSource.class
-  com/sanbait/shadowgrid/mixin/MixinChunkGenerator.class
+  com/sanbait/shadowgrid/mixin/MixinClientChunkCache.class
   com/sanbait/shadowgrid/mixin/MixinMultiNoiseBiomeSource.class
   com/sanbait/shadowgrid/mixin/MixinNetherPortalBlock.class
   com/sanbait/shadowgrid/mixin/MixinNoiseBasedBiomeSource.class
@@ -190,24 +184,15 @@ Writing Output: C:\Users\sanba\AppData\Roaming\PrismLauncher\instances\CORE\shad
   com/sanbait/shadowgrid/registry/ModStructures.class
   com/sanbait/shadowgrid/world/
   com/sanbait/shadowgrid/world/BarrierHandler.class
+  com/sanbait/shadowgrid/world/BiomeGridConfig$BiomeEntry.class
   com/sanbait/shadowgrid/world/BiomeGridConfig.class
   com/sanbait/shadowgrid/world/BiomeLevelContext.class
   com/sanbait/shadowgrid/world/GridSavedData.class
   com/sanbait/shadowgrid/world/block/
   com/sanbait/shadowgrid/world/block/GatewayBlock.class
-  com/sanbait/shadowgrid/world/structure/
-  com/sanbait/shadowgrid/world/structure/GatewayStructure.class
-  com/sanbait/shadowgrid/world/structure/GridStructurePlacement.class
-  com/sanbait/shadowgrid/world/structure/piece/
-  com/sanbait/shadowgrid/world/structure/piece/GatewayPiece.class
   data/
   data/shadowgrid/
   data/shadowgrid/dimension_stack.json
-  data/shadowgrid/worldgen/
-  data/shadowgrid/worldgen/structure/
-  data/shadowgrid/worldgen/structure/gateway.json
-  data/shadowgrid/worldgen/structure_set/
-  data/shadowgrid/worldgen/structure_set/gateway.json
   mixins.shadowgrid.json
   mixins.shadowgrid.refmap.json
   pack.mcmeta

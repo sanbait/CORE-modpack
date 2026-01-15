@@ -6,10 +6,11 @@
     "refmap": "mixins.shadowgrid.refmap.json",
     "mixins": [
         "MixinMultiNoiseBiomeSource",
-        "MixinChunkGenerator"
+        "MixinBiomeSource"
     ],
     "client": [
-        "MixinNetherPortalBlock"
+        "MixinNetherPortalBlock",
+        "MixinClientChunkCache"
     ],
     "injectors": {
         "defaultRequire": 1

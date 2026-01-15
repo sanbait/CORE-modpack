@@ -6,11 +6,16 @@ import java.util.Set;
 public class ClientGridData {
     private static final Set<String> unlockedSectors = new HashSet<>();
 
+    static {
+        unlockedSectors.add("0:0"); // Default unlock spawn
+    }
+
     public static void setUnlockedSectors(Set<String> sectors) {
         unlockedSectors.clear();
         unlockedSectors.addAll(sectors);
         // FIX FPS: Убран дебаг-принт который спамил в консоль
-        // System.out.println("[ShadowGrid] Updated unlocked sectors: " + unlockedSectors);
+        // System.out.println("[ShadowGrid] Updated unlocked sectors: " +
+        // unlockedSectors);
     }
 
     public static boolean isSectorUnlocked(int x, int z) {
@@ -30,10 +35,14 @@ public class ClientGridData {
     // Calculate cost for unlocking next sector (same logic as GatewayHandler)
     public static int calculateCost(int totalUnlocked) {
         int n = totalUnlocked - 1;
-        if (n < 0) return 0;
-        if (n == 0) return 10;
-        if (n == 1) return 50;
-        if (n == 2) return 100;
+        if (n < 0)
+            return 0;
+        if (n == 0)
+            return 10;
+        if (n == 1)
+            return 50;
+        if (n == 2)
+            return 100;
         return 200 * (int) Math.pow(2, n - 3);
     }
 }

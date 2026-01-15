@@ -21,7 +21,7 @@ import net.minecraft.core.registries.Registries;
 
 public class BiomeGridConfig {
 
-    public static final int SECTOR_SIZE = 128;
+    public static final int SECTOR_SIZE = 256;
 
     // Weighted biome pool: biome -> weight
     private static final Map<ResourceLocation, Integer> BIOME_WEIGHTS = new LinkedHashMap<>();
@@ -43,47 +43,73 @@ public class BiomeGridConfig {
     /**
      * Loads biome weights from config file
      */
+    // Data structure for biome config
+    private static class BiomeEntry {
+        ResourceLocation id;
+        int weight;
+        int minDistance; // In sectors
+
+        BiomeEntry(ResourceLocation id, int weight, int minDistance) {
+            this.id = id;
+            this.weight = weight;
+            this.minDistance = minDistance;
+        }
+    }
+
+    private static final List<BiomeEntry> BIOME_ENTRIES = new ArrayList<>();
+
+    /**
+     * Loads biome weights from config file
+     */
     public static void loadConfig() {
         if (configLoaded)
             return;
 
         Path configPath = FMLPaths.CONFIGDIR.get().resolve("shadowgrid_biomes.json");
 
-        // Ensure config directory exists
         try {
             Files.createDirectories(configPath.getParent());
         } catch (Exception e) {
             System.err.println("[ShadowGrid] Failed to create config directory: " + e.getMessage());
         }
 
-        // Copy default config if it doesn't exist
         if (!Files.exists(configPath)) {
             copyDefaultConfig(configPath);
         }
 
-        // Load config
         try (Reader reader = Files.newBufferedReader(configPath)) {
             Gson gson = new Gson();
             JsonObject json = gson.fromJson(reader, JsonObject.class);
             JsonObject weights = json.getAsJsonObject("biome_weights");
 
-            BIOME_WEIGHTS.clear();
+            BIOME_ENTRIES.clear();
             totalWeight = 0;
 
             for (String key : weights.keySet()) {
-                int weight = weights.get(key).getAsInt();
-                if (weight > 0) {
-                    ResourceLocation biomeLoc = new ResourceLocation(key);
-                    BIOME_WEIGHTS.put(biomeLoc, weight);
-                    totalWeight += weight;
+                try {
+                    ResourceLocation loc = new ResourceLocation(key);
+                    if (weights.get(key).isJsonObject()) {
+                        // New format: { "weight": 10, "min_distance": 5 }
+                        JsonObject entryObj = weights.getAsJsonObject(key);
+                        int w = entryObj.has("weight") ? entryObj.get("weight").getAsInt() : 10;
+                        int d = entryObj.has("min_distance") ? entryObj.get("min_distance").getAsInt() : 0;
+                        if (w > 0) {
+                            BIOME_ENTRIES.add(new BiomeEntry(loc, w, d));
+                        }
+                    } else {
+                        // Old format: int weight
+                        int w = weights.get(key).getAsInt();
+                        if (w > 0) {
+                            BIOME_ENTRIES.add(new BiomeEntry(loc, w, 0));
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("[ShadowGrid] Invalid config entry for " + key + ": " + e.getMessage());
                 }
             }
 
-            buildWeightedPool();
             configLoaded = true;
-
-            System.out.println("[ShadowGrid] Loaded " + BIOME_WEIGHTS.size() + " biomes from config (total weight: "
-                    + totalWeight + ")");
+            System.out.println("[ShadowGrid] Loaded " + BIOME_ENTRIES.size() + " biomes from config.");
 
         } catch (Exception e) {
             System.err.println("[ShadowGrid] Failed to load biome config, using defaults: " + e.getMessage());
@@ -91,16 +117,9 @@ public class BiomeGridConfig {
         }
     }
 
-    /**
-     * Builds weighted pool for O(1) random selection
-     */
+    // Removed buildWeightedPool() as it is now dynamic based on distance
     private static void buildWeightedPool() {
-        WEIGHTED_POOL.clear();
-        for (Map.Entry<ResourceLocation, Integer> entry : BIOME_WEIGHTS.entrySet()) {
-            for (int i = 0; i < entry.getValue(); i++) {
-                WEIGHTED_POOL.add(entry.getKey());
-            }
-        }
+        // No-op for compatibility if called elsewhere, but logic moved to generate
     }
 
     /**
@@ -114,29 +133,30 @@ public class BiomeGridConfig {
             root.addProperty("_description", "Configure biome spawn weights. Higher = more common. 0 = disabled.");
 
             JsonObject weights = new JsonObject();
-            // Add vanilla biomes with default weights
-            addDefaultWeight(weights, "minecraft:plains", 10);
-            addDefaultWeight(weights, "minecraft:forest", 10);
-            addDefaultWeight(weights, "minecraft:birch_forest", 8);
-            addDefaultWeight(weights, "minecraft:dark_forest", 6);
-            addDefaultWeight(weights, "minecraft:taiga", 8);
-            addDefaultWeight(weights, "minecraft:desert", 10);
-            addDefaultWeight(weights, "minecraft:savanna", 8);
-            addDefaultWeight(weights, "minecraft:jungle", 8);
-            addDefaultWeight(weights, "minecraft:badlands", 6);
-            addDefaultWeight(weights, "minecraft:swamp", 7);
-            addDefaultWeight(weights, "minecraft:meadow", 7);
-            addDefaultWeight(weights, "minecraft:grove", 5);
-            addDefaultWeight(weights, "minecraft:snowy_plains", 6);
-            addDefaultWeight(weights, "minecraft:ice_spikes", 3);
-            addDefaultWeight(weights, "minecraft:snowy_taiga", 6);
-            addDefaultWeight(weights, "minecraft:sunflower_plains", 6);
-            addDefaultWeight(weights, "minecraft:windswept_hills", 6);
-            addDefaultWeight(weights, "minecraft:cherry_grove", 5);
-            addDefaultWeight(weights, "minecraft:mangrove_swamp", 6);
-            addDefaultWeight(weights, "minecraft:mushroom_fields", 2);
-            addDefaultWeight(weights, "minecraft:ocean", 5);
-            addDefaultWeight(weights, "minecraft:deep_ocean", 3);
+
+            // Format: "biome_id": { "weight": 10, "min_distance": 0 }
+            addBiomeEntry(weights, "minecraft:plains", 10, 0);
+            addBiomeEntry(weights, "minecraft:forest", 10, 0);
+            addBiomeEntry(weights, "minecraft:birch_forest", 8, 0);
+            addBiomeEntry(weights, "minecraft:dark_forest", 6, 2); // A bit further
+            addBiomeEntry(weights, "minecraft:taiga", 8, 0);
+            addBiomeEntry(weights, "minecraft:desert", 10, 0);
+            addBiomeEntry(weights, "minecraft:savanna", 8, 0);
+            addBiomeEntry(weights, "minecraft:jungle", 8, 4); // Rare/Far
+            addBiomeEntry(weights, "minecraft:badlands", 6, 5); // Far
+            addBiomeEntry(weights, "minecraft:swamp", 7, 0);
+            addBiomeEntry(weights, "minecraft:meadow", 7, 1);
+            addBiomeEntry(weights, "minecraft:grove", 5, 2);
+            addBiomeEntry(weights, "minecraft:snowy_plains", 6, 3);
+            addBiomeEntry(weights, "minecraft:ice_spikes", 3, 5); // Rare/Far
+            addBiomeEntry(weights, "minecraft:snowy_taiga", 6, 3);
+            addBiomeEntry(weights, "minecraft:sunflower_plains", 6, 1);
+            addBiomeEntry(weights, "minecraft:windswept_hills", 6, 2);
+            addBiomeEntry(weights, "minecraft:cherry_grove", 5, 3);
+            addBiomeEntry(weights, "minecraft:mangrove_swamp", 6, 4);
+            addBiomeEntry(weights, "minecraft:mushroom_fields", 2, 8); // Very Rare/Far
+            addBiomeEntry(weights, "minecraft:ocean", 5, 0);
+            addBiomeEntry(weights, "minecraft:deep_ocean", 3, 2);
 
             root.add("biome_weights", weights);
 
@@ -153,35 +173,27 @@ public class BiomeGridConfig {
     }
 
     private static void addDefaultWeight(JsonObject obj, String biome, int weight) {
-        obj.addProperty(biome, weight);
+        // obj.addProperty(biome, weight); // OLD
+        addBiomeEntry(obj, biome, weight, 0); // Default distance 0
     }
 
-    /**
-     * Fallback: load hardcoded defaults if config fails
-     */
+    private static void addBiomeEntry(JsonObject obj, String biome, int weight, int minDist) {
+        JsonObject entry = new JsonObject();
+        entry.addProperty("weight", weight);
+        entry.addProperty("min_distance", minDist);
+        obj.add(biome, entry);
+    }
+
     private static void loadDefaultBiomes() {
-        BIOME_WEIGHTS.clear();
-        totalWeight = 0;
-
-        addBiome(Biomes.PLAINS.location(), 10);
-        addBiome(Biomes.FOREST.location(), 10);
-        addBiome(Biomes.DESERT.location(), 10);
-        addBiome(Biomes.TAIGA.location(), 8);
-        addBiome(Biomes.JUNGLE.location(), 8);
-        addBiome(Biomes.SAVANNA.location(), 8);
-        addBiome(Biomes.BADLANDS.location(), 6);
-        addBiome(Biomes.SWAMP.location(), 7);
-        addBiome(Biomes.ICE_SPIKES.location(), 3);
-        addBiome(Biomes.MUSHROOM_FIELDS.location(), 2);
-        addBiome(Biomes.OCEAN.location(), 5);
-
-        buildWeightedPool();
+        BIOME_ENTRIES.clear();
+        addBiome(Biomes.PLAINS.location(), 10, 0);
+        addBiome(Biomes.FOREST.location(), 10, 0);
+        addBiome(Biomes.DESERT.location(), 10, 0);
         configLoaded = true;
     }
 
-    private static void addBiome(ResourceLocation biome, int weight) {
-        BIOME_WEIGHTS.put(biome, weight);
-        totalWeight += weight;
+    private static void addBiome(ResourceLocation biome, int weight, int dist) {
+        BIOME_ENTRIES.add(new BiomeEntry(biome, weight, dist));
     }
 
     /**
@@ -193,20 +205,50 @@ public class BiomeGridConfig {
             loadConfig();
         }
 
-        if (WEIGHTED_POOL.isEmpty()) {
-            return Biomes.PLAINS; // Ultimate fallback
+        if (BIOME_ENTRIES.isEmpty()) {
+            return Biomes.PLAINS;
         }
 
-        // Create deterministic seed from world seed and sector coordinates
+        // Calculate distance from spawn (0,0) in sectors (Manhattan or Chebyshev?
+        // usually Max(|x|,|z|) for square grids/rings)
+        int dist = Math.max(Math.abs(sectorX), Math.abs(sectorZ));
+
+        // Filter valid biomes based on distance
+        List<BiomeEntry> validBiomes = new ArrayList<>();
+        int currentTotalWeight = 0;
+
+        for (BiomeEntry entry : BIOME_ENTRIES) {
+            if (dist >= entry.minDistance) {
+                validBiomes.add(entry);
+                currentTotalWeight += entry.weight;
+            }
+        }
+
+        if (validBiomes.isEmpty()) {
+            return Biomes.PLAINS; // Fallback if nothing matches (shouldn't happen if baseline biomes are dist 0)
+        }
+
+        // Deterministic RNG
         long sectorSeed = worldSeed;
         sectorSeed = sectorSeed * 31L + sectorX;
         sectorSeed = sectorSeed * 31L + sectorZ;
-
         Random random = new Random(sectorSeed);
-        int index = random.nextInt(WEIGHTED_POOL.size());
-        ResourceLocation biomeLoc = WEIGHTED_POOL.get(index);
 
-        return ResourceKey.create(Registries.BIOME, biomeLoc);
+        // Weighted Selection
+        if (currentTotalWeight <= 0) {
+            return Biomes.PLAINS;
+        }
+        int pick = random.nextInt(currentTotalWeight);
+        int current = 0;
+
+        for (BiomeEntry entry : validBiomes) {
+            current += entry.weight;
+            if (pick < current) {
+                return ResourceKey.create(Registries.BIOME, entry.id);
+            }
+        }
+
+        return ResourceKey.create(Registries.BIOME, validBiomes.get(0).id);
     }
 
     /**

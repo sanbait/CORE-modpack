@@ -18,9 +18,6 @@ public class ShadowGridMod {
         com.sanbait.shadowgrid.registry.ModBlocks.register(modEventBus);
         com.sanbait.shadowgrid.registry.ModStructures.register(modEventBus);
 
-        // Register Config
-        com.sanbait.shadowgrid.config.GatewayConfig.register();
-
         // Register network in common setup (runs on both client and server)
         modEventBus.addListener(this::commonSetup);
 

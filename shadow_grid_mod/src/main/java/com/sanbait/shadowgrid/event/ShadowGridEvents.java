@@ -21,29 +21,36 @@ public class ShadowGridEvents {
     public static void onServerStarting(ServerAboutToStartEvent event) {
         // Load biome config first (creates default file if needed)
         BiomeGridConfig.loadConfig();
-        
+
         // Capture world seed
         long seed = event.getServer().getWorldData().worldGenOptions().seed();
         BiomeGridConfig.currentWorldSeed = seed;
         BiomeGridConfig.mixinCalled = false; // Reset flag for new world
-        
+
         System.out.println("[ShadowGrid] Server starting - World seed: " + seed);
         System.out.println("[ShadowGrid] Waiting for biome mixin to activate...");
     }
-    
+
     @SubscribeEvent
     public static void onWorldLoad(LevelEvent.Load event) {
-        // Cache biome registry when world loads (this happens AFTER world generation starts)
+        // Cache biome registry when world loads (this happens AFTER world generation
+        // starts)
         if (event.getLevel() instanceof ServerLevel serverLevel && serverLevel.dimension() == Level.OVERWORLD) {
             try {
-                net.minecraft.core.Registry<net.minecraft.world.level.biome.Biome> biomeRegistry = 
-                    serverLevel.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BIOME);
+                net.minecraft.core.Registry<net.minecraft.world.level.biome.Biome> biomeRegistry = serverLevel
+                        .registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BIOME);
                 BiomeGridConfig.setCachedRegistry(biomeRegistry);
-                System.out.println("[ShadowGrid] Overworld loaded - Biome registry cached (" + biomeRegistry.size() + " biomes)");
-                
+                System.out.println(
+                        "[ShadowGrid] Overworld loaded - Biome registry cached (" + biomeRegistry.size() + " biomes)");
+
+                // Force spawn to 0,0 center
+                int safeY = serverLevel.getSeaLevel() + 10;
+                serverLevel.setDefaultSpawnPos(new net.minecraft.core.BlockPos(0, safeY, 0), 0.0f);
+
                 // Check if mixin was called
                 if (!BiomeGridConfig.mixinCalled) {
-                    System.out.println("[ShadowGrid] ⚠ WARNING: Biome mixin not called yet! Terralith may be using different BiomeSource.");
+                    System.out.println(
+                            "[ShadowGrid] ⚠ WARNING: Biome mixin not called yet! Terralith may be using different BiomeSource.");
                 }
             } catch (Exception e) {
                 System.err.println("[ShadowGrid] ERROR: Failed to cache biome registry: " + e.getMessage());
