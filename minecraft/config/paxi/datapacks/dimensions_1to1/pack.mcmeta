@@ -1,0 +1,6 @@
+{
+    "pack": {
+        "pack_format": 15,
+        "description": "Makes Nether coordinate scale 1:1 with Overworld for grid compatibility"
+    }
+}

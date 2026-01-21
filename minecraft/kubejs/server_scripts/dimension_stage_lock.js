@@ -1,58 +1,86 @@
 // Dimension Access Control via Game Stages
-// Blocks dimension travel BEFORE it happens (not after)
-// This is the CORRECT approach - prevents teleportation before it occurs
+// Uses direct Forge Event Bus access to avoid KubeJS version compatibility issues
 
-console.info('[Dimension Lock] ===== СКРИПТ БЛОКИРОВКИ ИЗМЕРЕНИЙ ЗАГРУЖЕН =====');
+const $MinecraftForge = Java.loadClass('net.minecraftforge.common.MinecraftForge')
+const $EntityTravelToDimensionEvent = Java.loadClass('net.minecraftforge.event.entity.EntityTravelToDimensionEvent')
 
-ForgeEvents.onEvent('net.minecraftforge.event.entity.EntityTravelToDimensionEvent', event => {
-    let entity = event.entity;
+console.info('[Dimension Lock] ===== СКРИПТ БЛОКИРОВКИ ИЗМЕРЕНИЙ (NATIVE/DIRECT) =====');
 
-    // Only check for players
-    if (entity.type != 'minecraft:player') return;
+// Register listener directly on Forge Event Bus
+$MinecraftForge.EVENT_BUS.addListener(event => {
+    // Filter for the specific event we care about
+    if (event.getClass().getName() == 'net.minecraftforge.event.entity.EntityTravelToDimensionEvent') {
+        let entity = event.getEntity()
 
-    let player = entity;
-    let targetDim = event.dimension.location().toString();
-    
-    console.info(`[Dimension Lock] Игрок ${player.name} пытается попасть в ${targetDim}`);
+        // Only check for players
+        if (entity.getType() != 'minecraft:player') return;
 
-    // Nether requires stage
-    if (targetDim == 'minecraft:the_nether') {
-        if (!player.stages.has('unlock_nether')) {
-            event.cancel();
-            console.info(`[Dimension Lock] Доступ в Ад запрещен для ${player.name}`);
-            player.tell('§c§l❌ Доступ запрещен: Ад');
-            player.tell('§7Выполните квест для разблокировки доступа в Ад');
-            return;
+        let targetDim = event.getDimension().location().toString();
+        let player = entity; // In this context, entity is the player (ServerPlayer)
+
+        // Utility to check stage (using KubeJS wrapper if possible, or string check)
+        // KubeJS wraps the entity, so .stages might work if 'entity' is wrapped.
+        // If 'entity' is raw Java object, we need to use GameStages API or data.
+        // Safest is to try KubeJS wrapper:
+        let kjsPlayer = entity;
+        // Note: Raw event entity might not have .stages helper.
+        // We can re-wrap it or use NBT. 
+        // But usually KubeJS wraps event arguments? 
+        // No, direct addListener gives raw Java event.
+        // We need to be careful.
+
+        // Let's try to get KubeJS player wrapper
+        // Use NBT or Scoreboard Tags as fallback if stages fail?
+        // Actually, GameStages usually adds a capability.
+        // But KubeJS usually patches the Entity class.
+
+        // Let's try accessing .stages (it might work on raw object due to mixin).
+        // If not, we can check a persistent data tag.
+        // Or simply: player.getTags().contains('stage:unlock_nether')? (KubeJS GameStages uses capability)
+
+        // DEBUG: console.info('Player Class: ' + player.getClass().getName())
+
+        // Better approach: Use server.getPlayer(name) to get KubeJS wrapped player?
+        // We can get server from entity.
+        let server = entity.getServer();
+        if (server) {
+            let kjsPlayerFound = server.getPlayer(entity.getUUID());
+            if (kjsPlayerFound) {
+                player = kjsPlayerFound;
+            }
         }
-        console.info(`[Dimension Lock] Доступ в Ад разрешен для ${player.name}`);
-    }
 
-    // Deep Dark requires stage
-    if (targetDim == 'deeperdarker:otherside') {
-        if (!player.stages.has('unlock_deep_dark')) {
-            event.cancel();
-            console.info(`[Dimension Lock] Доступ в Deep Dark запрещен для ${player.name}`);
-            player.tell('§c§l❌ Доступ запрещен: Deep Dark');
-            player.tell('§7Выполните квест для разблокировки доступа в Deep Dark');
-            return;
-        }
-        console.info(`[Dimension Lock] Доступ в Deep Dark разрешен для ${player.name}`);
-    }
+        // Log attempt
+        console.info(`[Dimension Lock] Игрок ${player.getName().getString()} пытается попасть в ${targetDim}`);
 
-    // End requires stage
-    if (targetDim == 'minecraft:the_end') {
-        if (!player.stages.has('unlock_end')) {
-            event.cancel();
-            console.info(`[Dimension Lock] Доступ в Край запрещен для ${player.name}`);
-            player.tell('§c§l❌ Доступ запрещен: Край');
-            player.tell('§7Выполните квест для разблокировки доступа в Край');
-            return;
+        // Nether check
+        if (targetDim == 'minecraft:the_nether') {
+            if (!player.stages.has('unlock_nether')) {
+                event.setCanceled(true);
+                player.tell(Component.literal('§c§l❌ Доступ запрещен: Ад'));
+                player.tell(Component.literal('§7Выполните квест для разблокировки доступа в Ад'));
+                return;
+            }
         }
-        console.info(`[Dimension Lock] Доступ в Край разрешен для ${player.name}`);
+
+        // Deep Dark check
+        if (targetDim == 'deeperdarker:otherside') {
+            if (!player.stages.has('unlock_deep_dark')) {
+                event.setCanceled(true);
+                player.tell(Component.literal('§c§l❌ Доступ запрещен: Deep Dark'));
+                player.tell(Component.literal('§7Выполните квест для разблокировки доступа в Deep Dark'));
+                return;
+            }
+        }
+
+        // End check
+        if (targetDim == 'minecraft:the_end') {
+            if (!player.stages.has('unlock_end')) {
+                event.setCanceled(true);
+                player.tell(Component.literal('§c§l❌ Доступ запрещен: Край'));
+                player.tell(Component.literal('§7Выполните квест для разблокировки доступа в Край'));
+                return;
+            }
+        }
     }
 });
-
-// Quest rewards in FTB Quests (command rewards):
-// /gamestage add @p unlock_nether
-// /gamestage add @p unlock_deep_dark
-// /gamestage add @p unlock_end

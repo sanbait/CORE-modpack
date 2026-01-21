@@ -18,8 +18,11 @@ public class GridSavedData extends SavedData {
     private final Set<String> unlockedSectors = new HashSet<>();
 
     public GridSavedData() {
-        // Unlock the central sector by default
+        // Unlock the 4 central sectors by default (since spawn is at 0,0 intersection)
         unlockedSectors.add("0:0");
+        unlockedSectors.add("0:-1");
+        unlockedSectors.add("-1:0");
+        unlockedSectors.add("-1:-1");
     }
 
     public static GridSavedData get(Level level) {
@@ -40,14 +43,52 @@ public class GridSavedData extends SavedData {
 
     public void unlockSector(int x, int z, Level level) {
         String sectorKey = x + ":" + z;
+        System.out.println("[ShadowGrid] unlockSector called for: " + sectorKey);
         if (unlockedSectors.add(sectorKey)) {
             setDirty();
+            System.out.println(
+                    "[ShadowGrid] Sector " + sectorKey + " unlocked! Total unlocked: " + unlockedSectors.size());
 
-            // Барьеры через поле - не нужно удалять физические блоки!
-
-            // Sync to all players immediately - CRITICAL for client to update!
+            // 1. Sync unlocked state to all clients
             com.sanbait.shadowgrid.network.ShadowNetwork
                     .sendToAll(new com.sanbait.shadowgrid.network.PacketSyncGrid(getUnlockedSectors()));
+
+            // 2. FORCE RESEND CHUNKS in the sector to players
+            // The client previously ignored these chunks, so we must resend them.
+            if (level instanceof ServerLevel serverLevel) {
+                int SECTOR_SIZE = BiomeGridConfig.SECTOR_SIZE;
+                int centerX = x * SECTOR_SIZE;
+                int centerZ = z * SECTOR_SIZE;
+
+                // Radius of chunks to update (sector is 16x16 chunks)
+                // We iterate slightly larger area just to be safe, or exact sector.
+                int minChunkX = (centerX - SECTOR_SIZE / 2) >> 4;
+                int maxChunkX = (centerX + SECTOR_SIZE / 2) >> 4;
+                int minChunkZ = (centerZ - SECTOR_SIZE / 2) >> 4;
+                int maxChunkZ = (centerZ + SECTOR_SIZE / 2) >> 4;
+
+                System.out.println("[ShadowGrid] Resending chunks in range: " + minChunkX + "," + minChunkZ + " to "
+                        + maxChunkX + "," + maxChunkZ);
+
+                for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+                    for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                        net.minecraft.world.level.chunk.LevelChunk chunk = serverLevel.getChunkSource().getChunk(cx, cz,
+                                false);
+                        if (chunk != null) {
+                            // Create packet
+                            net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket packet = new net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket(
+                                    chunk, serverLevel.getLightEngine(), null, null);
+
+                            // Send to all players tracking this chunk
+                            serverLevel.getChunkSource().chunkMap.getPlayers(chunk.getPos(), false).forEach(player -> {
+                                player.connection.send(packet);
+                            });
+                        }
+                    }
+                }
+            }
+        } else {
+            System.out.println("[ShadowGrid] Sector " + sectorKey + " was already unlocked!");
         }
     }
 
